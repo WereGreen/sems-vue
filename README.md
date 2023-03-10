@@ -6,6 +6,7 @@
 
 前端：vue.js、Ellement-UI、Echarts、Axios等...
 
+后端地址：https://github.com/WereGreen/sems-java.git
 
 数据库：Mysql、Reids
 
