@@ -10,19 +10,28 @@
                size="medium"
                ref="queryFromData">
         <el-form-item label="器材名称" prop="equipment">
-          <el-select v-model="queryFromData.equipment" clearable placeholder="请选择器材">
-            <el-option
-                v-for="item in queryFromData.equipmentOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value">
-            </el-option>
+          <el-select v-model="queryFromData.equipment"
+                     filterable
+                     clearable
+                     clearable placeholder="请选择器材">
+
+            <el-option-group
+                v-for="group in options"
+                :key="group.label"
+                :label="group.label">
+              <el-option
+                  v-for="item in group.options"
+                  :key="item.equipment"
+                  :label="item.equipment"
+                  :value="item.equipment">
+              </el-option>
+            </el-option-group>
           </el-select>
         </el-form-item>
         <el-form-item label="所属仓库" prop="warehouse">
           <el-select v-model="queryFromData.warehouse" clearable placeholder="请选择仓库">
             <el-option
-                v-for="item in queryFromData.warehouseOptions"
+                v-for="item in warehouseOptions"
                 :key="item.value"
                 :label="item.label"
                 :value="item.value">
@@ -39,7 +48,7 @@
               range-separator="至"
               start-placeholder="开始日期"
               end-placeholder="结束日期"
-              :picker-options="queryFromData.queryPickerOptions">
+              :picker-options="queryPickerOptions">
           </el-date-picker>
 
         </el-form-item>
@@ -47,15 +56,17 @@
         <el-form-item label="申请原因" prop="reason">
           <el-input
               placeholder="请输入内容"
+              maxlength="10"
+              show-word-limit
               v-model="queryFromData.reason"
               clearable>
           </el-input>
         </el-form-item>
 
         <el-form-item label="申请状态" prop="applicationStatus">
-          <el-select v-model="queryFromData.applicationStatus" clearable placeholder="请选择状态">
+          <el-select v-model="queryFromData.state" clearable placeholder="请选择状态">
             <el-option
-                v-for="item in queryFromData.applicationStatusOptions"
+                v-for="item in applicationStatusOptions"
                 :key="item.value"
                 :label="item.label"
                 :value="item.value">
@@ -71,7 +82,7 @@
         </el-form-item>
       </el-form>
 
-      <el-radio-group v-model="radio1" style="margin-bottom: 10px" size="small">
+      <el-radio-group v-model="radio" style="margin-bottom: 10px" size="small" @change="applyInfo()">
         <el-radio-button label="添加"></el-radio-button>
         <el-radio-button label="报废"></el-radio-button>
         <el-radio-button label="维修"></el-radio-button>
@@ -96,6 +107,7 @@
         <el-table-column
             prop="name"
             label="申请人"
+            :formatter="applyName"
             align="center">
         </el-table-column>
         <el-table-column
@@ -142,12 +154,19 @@
             </el-button>
 
             <span v-if="scope.row.applicationStatus != 0">
-              {{ scope.row.explain }}
+              {{ scope.row.auditorReason }}
             </span>
 
           </template>
 
 
+        </el-table-column>
+        <el-table-column
+            prop="auditorDate"
+            label="处理时间"
+            :formatter="auditorDateState"
+            sortable
+            align="center">
         </el-table-column>
 
       </el-table>
@@ -155,23 +174,56 @@
 
     <!--  处理  -->
     <el-dialog
-        :title="radio1 + '申请处理'"
+        :title="radio + '申请处理'"
         :visible.sync="handleDialogVisible"
         @close="addApprovalDialogclose()"
         width="50%"
         center>
 
+      <el-form label-position="right" label-width="80px" :model="approvalFromData">
 
-      <el-descriptions :column="2" border :contentStyle="CS">
-        <el-descriptions-item label="申请人">{{ approvalFromData.name }}</el-descriptions-item>
-        <el-descriptions-item label="器材名称">{{ approvalFromData.equipment }}</el-descriptions-item>
-        <el-descriptions-item label="申请数量">{{ approvalFromData.num }}</el-descriptions-item>
-        <el-descriptions-item label="存放仓库">{{ approvalFromData.warehouse }}</el-descriptions-item>
-        <el-descriptions-item label="申请时间">{{ approvalFromData.applyTime }}</el-descriptions-item>
+        <div style="display: flex;">
+          <el-form-item label="使用人" :label-width="formLabelWidth">
+            <el-input v-model="approvalFromData.name"
+                      style="width: 180px"
+                      :disabled="true"></el-input>
+          </el-form-item>
+          <el-form-item label="器材名称" :label-width="formLabelWidth">
+            <el-input v-model="approvalFromData.equipment"
+                      style="width: 180px"
+                      :disabled="true"></el-input>
+          </el-form-item>
+        </div>
 
-        <el-descriptions-item label="审批结果">
+        <div style="display: flex;">
+          <el-form-item label="所属仓库" :label-width="formLabelWidth">
+            <el-input v-model="approvalFromData.warehouse"
+                      style="width: 180px"
+                      :disabled="true"></el-input>
+          </el-form-item>
 
-          <el-select v-model="approvalFromData.approvalResult" clearable placeholder="请选择结果">
+          <el-form-item label="使用数量" :label-width="formLabelWidth">
+            <el-input v-model="approvalFromData.num"
+                      style="width: 180px"
+                      :disabled="true"></el-input>
+          </el-form-item>
+        </div>
+
+        <el-form-item label="申请时间" :label-width="formLabelWidth">
+          <el-input v-model="approvalFromData.applyTime"
+                    style="width: 180px"
+                    :disabled="true"></el-input>
+        </el-form-item>
+
+        <el-form-item label="申请原因" :label-width="formLabelWidth">
+          <el-input v-model="approvalFromData.reason"
+                    type="textarea"
+                    style="width: 480px"
+                    :disabled="true"></el-input>
+        </el-form-item>
+
+        <el-form-item label="审批结果" :label-width="formLabelWidth">
+          <el-select v-model="approvalFromData.state" clearable placeholder="请选择结果">
             <el-option
                 v-for="item in approvalOptions"
                 :key="item.value"
@@ -179,26 +231,22 @@
                 :value="item.value">
             </el-option>
           </el-select>
+        </el-form-item>
 
-        </el-descriptions-item>
-
-        <el-descriptions-item label="申请原因">{{ approvalFromData.reason }}</el-descriptions-item>
-
-        <el-descriptions-item label="审批说明">
-
+        <el-form-item label="说明" :label-width="formLabelWidth">
           <el-input
               type="textarea"
-              autosize
               placeholder="请输入原因"
-              :autosize="{ minRows: 2, maxRows: 5}"
-              v-model="approvalFromData.approvalReason"
+              v-model="approvalFromData.auditorReason"
+              maxlength="100"
+              show-word-limit
+              :autosize="{ minRows: 3, maxRows: 4}"
+              style="width: 480px"
               clearable>
           </el-input>
+        </el-form-item>
 
-        </el-descriptions-item>
-
-      </el-descriptions>
-
+      </el-form>
 
       <span slot="footer" class="dialog-footer">
           <el-button @click="handleDialogVisible = false">取 消</el-button>
@@ -214,6 +262,7 @@
           @current-change="handleCurrentChange"
           :current-page="currentPage"
           :page-sizes="[6, 12, 18, 24]"
+          :hide-on-single-page="tableData.length < 7"
           :page-size="pageSize"
           layout="total, sizes, prev, pager, next, jumper"
           :total="tableData.length">
@@ -245,129 +294,81 @@ export default {
         }
       ],
 
-      radio1: '添加',
+      radio: '添加',
+
+      applicationStatusOptions: [
+        {
+          value: -1,
+          label: '已驳回'
+        }, {
+          value: 0,
+          label: '审核中'
+        }, {
+          value: 1,
+          label: '已通过'
+        },
+        {
+          value: '',
+          label: '全部'
+        }
+      ],
+
+      queryPickerOptions: {
+        disabledDate(time) {
+          return (time.getTime() + 3600 * 1000 * 24 * 30) < Date.now() || time.getTime() > Date.now();
+        },
+        shortcuts: [{
+          text: '最近一周',
+          onClick(picker) {
+            const end = new Date();
+            const start = new Date();
+            start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+            picker.$emit('pick', [start, end]);
+          }
+        }, {
+          text: '最近一个月',
+          onClick(picker) {
+            const end = new Date();
+            const start = new Date();
+            start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+            picker.$emit('pick', [start, end]);
+          }
+        }]
+      },
 
       queryFromData: {
         equipment: '',
-        equipmentOptions: [{
-          value: '乒乓球',
-          label: '乒乓球'
-        }, {
-          value: '羽毛球',
-          label: '羽毛球'
-        }, {
-          value: '篮球',
-          label: '篮球'
-        }, {
-          value: '足球',
-          label: '足球'
-        }, {
-          value: '排球',
-          label: '排球'
-        }],
         warehouse: '',
-        warehouseOptions: [
-          {
-            value: '仓库1',
-            label: '仓库1'
-          }, {
-            value: '仓库2',
-            label: '仓库2'
-          }, {
-            value: '仓库3',
-            label: '仓库3'
-          }
-        ],
         picker: [],
         queryStarTime: '',
         queryEndTime: '',
-        queryPickerOptions: {
-          disabledDate(time) {
-            return (time.getTime() + 3600 * 1000 * 24 * 30) < Date.now() || time.getTime() > Date.now();
-          },
-          shortcuts: [{
-            text: '最近一周',
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-              picker.$emit('pick', [start, end]);
-            }
-          }, {
-            text: '最近一个月',
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit('pick', [start, end]);
-            }
-          }]
-        },
+        state: 0,
         reason: '',
         auditor: '',
-        applicationStatus: '',
-        applicationStatusOptions: [
-          {
-            value: -1,
-            label: '已驳回'
-          }, {
-            value: 0,
-            label: '审核中'
-          }, {
-            value: 1,
-            label: '已通过'
-          },
-          {
-            value: '全部',
-            label: '全部'
-          }
-        ]
+        classState: 1,
       },
 
       approvalFromData: {
+        id: '',
         name: '',
+        auditorName: '',
+        state: '',
+        auditorReason: '',
+        auditorDate: '',
+        classState: '',
         equipment: '',
         num: '',
         approvalResult: '',
         warehouse: '',
         reason: '',
         applyTime: '',
-        approvalReason: '',
       },
 
       applyFromData: {
         name: '',
         equipment: '',
-        equipmentOptions: [{
-          value: '乒乓球',
-          label: '乒乓球'
-        }, {
-          value: '羽毛球',
-          label: '羽毛球'
-        }, {
-          value: '篮球',
-          label: '篮球'
-        }, {
-          value: '足球',
-          label: '足球'
-        }, {
-          value: '排球',
-          label: '排球'
-        }],
         num: 1,
         warehouse: '',
-        warehouseOptions: [
-          {
-            value: '仓库1',
-            label: '仓库1'
-          }, {
-            value: '仓库2',
-            label: '仓库2'
-          }, {
-            value: '仓库3',
-            label: '仓库3'
-          }
-        ],
         applyTime: '',
         applyReason: '',
       },
@@ -376,85 +377,18 @@ export default {
       pageSize: 6,
 
       tableData: [{
-        applicationDate: '2023-2-8 08:49',
-        name: 'xxx',
-        equipment: '乒乓球',
-        num: '3',
-        warehouse: '东一',
-        reason: '现数量不能满足教学需求现数量不能满足教学需求现数量不能满足教学需求现数量不能满足教学需求现数量不能满足教学需求现数量不能满足教学需求',
+        id: '',
+        applicationDate: '',
+        name: '',
+        equipment: '',
+        num: '',
+        warehouse: '',
+        reason: '',
         applicationStatus: 0,
-        explain: '',
+        auditorReason: '',
         auditor: '',
-      },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          equipment: '乒乓球',
-          num: '3',
-          warehouse: '东一',
-          reason: '弥补报废后差异',
-          applicationStatus: 1,
-          explain: '同意',
-          auditor: '',
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          equipment: '乒乓球',
-          num: '3',
-          warehouse: '东一',
-          reason: '现数量不能满足教学需求现数量不能满足教学需求现数量不能满足教学需求现数量不能满足教学需求现数量不能满足教学需求',
-          applicationStatus: -1,
-          explain: '原因不合理充分，不同意 原因不合理充分，不同意 原因不合理充分，不同意',
-          auditor: '',
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          equipment: '乒乓球',
-          num: '3',
-          warehouse: '东一',
-          reason: '现数量不能满足教学需求',
-          applicationStatus: 1,
-          explain: '',
-          auditor: '王小明',
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          equipment: '乒乓球',
-          num: '3',
-          warehouse: '东一',
-          reason: '现数量不能满足教学需求',
-          applicationStatus: 0
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          equipment: '乒乓球',
-          num: '3',
-          warehouse: '东一',
-          reason: '现数量不能满足教学需求',
-          applicationStatus: 0
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          equipment: '乒乓球',
-          num: '3',
-          warehouse: '东一',
-          reason: '现数量不能满足教学需求',
-          applicationStatus: -1
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          equipment: '乒乓球',
-          num: '3',
-          warehouse: '东一',
-          reason: '现数量不能满足教学需求',
-          applicationStatus: -1
-        },],
+        auditorDate: '',
+      }],
 
       addScrapDialogVisible: false,
       handleDialogVisible: false,
@@ -475,27 +409,254 @@ export default {
         ],
       },
 
-      userInfo: {}
+      applyData: {
+        name: '',
+        state: '',
+        classState: '',
+      },
+
+      options: [{
+        label: '',
+        options: [{
+          value: '',
+          label: ''
+        },]
+      },
+      ],
+
+      test: [
+        {
+          label: '',
+          options: [
+            {},
+          ]
+        }
+      ],
+
+      equipmentInfo: [
+        {},
+      ],
+
+      warehouseOptions: [
+        {
+          label: '',
+          value: '',
+        },
+      ],
+
+      classNameOptions: [
+        {
+          label: '',
+          value: '',
+        },
+      ],
+
+      userInfo: {},
+      username: '',
+
+      allUserOptions: [
+        {
+          label: '',
+          value: '',
+        },
+      ],
 
     }
   },
   created() {
-    this.getUserInfo()
-    this.queryFromData.applicationStatus = this.queryFromData.applicationStatusOptions[1].value;
-    console.log("radio1")
-    console.log(this.radio1)
+    this.getUserInfo();
+    this.getAllUserInfo();
+    this.getClassInfo();
+    this.getEquipmentInfo();
+    this.getWarehouseInfo();
+    this.queryFromData.state = this.applicationStatusOptions[3].value;
+    this.applyData.state = this.applicationStatusOptions[3].value;
+    this.applyData.classState = 1;
+    this.getApplyInfo();
+
   },
 
   methods: {
 
-    submitApprovalForm() {
+    getUserInfo() {
+      this.$axios.get("/tb/userInfo").then(res => {
 
+        this.name = res.data.data.name;
+        this.username = res.data.data.username;
+        this.applyData.name = res.data.data.username;
+        console.log("username:" + this.username)
+        this.applyData.name = this.username;
+        this.queryFromData.name = res.data.data.username;
+        console.log(res.data.data)
+
+      })
+    },
+
+    getApplyInfo() {
+      console.log("---------------")
+      console.log(this.applyData)
+      this.$axios.post("/tb/apply/correlation", this.applyData).then(res => {
+
+        let apply = res.data.data.applyList;
+        console.log("+++++++++++++")
+        console.log(apply)
+        this.tableData = [];
+
+        for (let i = 0; i < apply.length; i++) {
+          this.$set(this.tableData, i, {
+            id: apply[i].id,
+            username: apply[i].name,
+            name: apply[i].name,
+            applicationDate: apply[i].date,
+            className: apply[i].className,
+            equipment: apply[i].equipment,
+            num: apply[i].num,
+            warehouse: apply[i].warehouse,
+            reason: apply[i].reason,
+            applicationStatus: apply[i].state,
+            auditorReason: apply[i].auditorReason,
+            auditorDate: apply[i].auditorDate,
+          })
+        }
+
+        console.log("table")
+        console.log(this.tableData)
+      })
+    },
+
+    getWarehouseInfo() {
+
+      this.$axios.get("/tb/warehouse/info").then(res => {
+
+        let warehouses = res.data.data.warehouseList;
+        console.log(warehouses)
+
+        for (let i = 0; i < warehouses.length; i++) {
+
+          this.$set(this.warehouseOptions, i, {
+            label: warehouses[i].warehouse,
+            value: warehouses[i].warehouse,
+          })
+        }
+
+        console.log("this.warehouseOptions")
+        console.log(this.warehouseOptions)
+
+      })
+    },
+
+    getEquipmentInfo() {
+      this.$axios.get("/tb/equipment/info").then(res => {
+
+        let equipments = res.data.data.equipments;
+        this.equipmentInfo = equipments;
+        console.log("this.equipmentInfo")
+        console.log(this.equipmentInfo)
+
+        for (let i = 0; i < this.test.length; i++) {
+          this.test[i].options = equipments.filter(item => {
+            return item.className == this.test[i].label;
+          })
+        }
+        this.options = this.test
+
+        console.log("this.options")
+        console.log(this.options)
+
+      })
+    },
+
+    getClassInfo() {
+
+      this.$axios.get("/tb/classification/info").then(res => {
+
+        let classifications = res.data.data.classifications;
+
+        for (let i = 0; i < classifications.length; i++) {
+
+          this.$set(this.test, i, {
+            label: classifications[i].className,
+          })
+
+          this.$set(this.classNameOptions, i, {
+            label: classifications[i].className,
+            value: classifications[i].className,
+          })
+
+        }
+
+      })
+    },
+
+    getAllUserInfo() {
+      this.$axios.get("/tb/user/allUser").then(res => {
+
+        let allUserList = res.data.data.allUserList;
+        console.log("====================")
+        console.log(allUserList)
+
+        for (let i = 0; i < allUserList.length; i++) {
+
+          this.$set(this.allUserOptions, i, {
+            label: allUserList[i].name,
+            value: allUserList[i].username,
+          })
+        }
+      })
+    },
+
+    auditorDateState(row, column) {
+      if (row.auditorDate == null) {
+        return '未处理'
+      } else {
+        return row.auditorDate;
+      }
+    },
+
+    applyInfo() {
+      if (this.radio == '添加') {
+        this.applyData.classState = 1;
+        this.queryFromData.classState = 1;
+      } else if (this.radio == '报废') {
+        this.applyData.classState = -1;
+        this.queryFromData.classState = -1;
+      } else {
+        this.applyData.classState = 0;
+        this.queryFromData.classState = 0;
+      }
+      this.getApplyInfo();
+      console.log(this.radio)
+      console.log(this.applyData.classState)
+    },
+
+    submitApprovalForm() {
       let afd = this.approvalFromData;
 
-      if (afd.approvalReason && afd.approvalResult) {
+      if (afd.state && afd.auditorReason) {
+        afd.auditorDate = this.getCurrentTime();
+        if (this.radio == '添加') {
+          afd.classState = 1;
+        } else if (this.radio == '维修') {
+          afd.classState = 0;
+        } else {
+          afd.classState = -1;
+        }
         console.log("afd")
         console.log(afd)
-        this.handleDialogVisible = false;
+
+        this.$axios.post("/tb/apply/handle", afd).then(res => {
+
+          this.$message({
+            showClose: true,
+            message: "申请处理成功！~",
+            type: 'success'
+          });
+
+          this.getApplyInfo();
+          this.handleDialogVisible = false;
+
+        })
+
       } else {
         this.$message.error('请将信息填完整后重试');
         return
@@ -503,37 +664,30 @@ export default {
 
     },
 
-    getUserInfo() {
-      this.$axios.get("/sysUser/UserInfo").then(res => {
-
-        this.userInfo = res.data.data;
-      })
-    },
-
     processApproval(index, row) {
 
       this.handleDialogVisible = true;
       let afd = this.approvalFromData;
 
-      afd.input = '';
-      afd.name = row.name;
+      let allUserOptions = this.allUserOptions;
+      for (let i = 0; i < this.allUserOptions.length; i++) {
+        if (row.name == allUserOptions[i].value) {
+          afd.name = allUserOptions[i].label;
+        }
+      }
+      afd.auditorName = this.username;
+      afd.id = row.id;
       afd.equipment = row.equipment;
       afd.num = row.num;
       afd.warehouse = row.warehouse;
       afd.reason = row.reason;
       afd.applyTime = row.applicationDate;
 
-      console.log(index, row);
-    },
-
-    radio() {
-      console.log("radio1")
-      console.log(this.radio1)
     },
 
     addApprovalDialogclose() {
-      this.approvalFromData.approvalResult = '';
-      this.approvalFromData.approvalReason = '';
+      this.approvalFromData.state = '';
+      this.approvalFromData.auditorReason = '';
     },
 
     handleChange() {
@@ -566,10 +720,20 @@ export default {
       this.addScrapDialogVisible = true;
     },
 
+    applyName(row, column) {
+
+      let allUserOptions = this.allUserOptions;
+      for (let i = 0; i < this.allUserOptions.length; i++) {
+        if (row.name == allUserOptions[i].value) {
+          return allUserOptions[i].label;
+        }
+      }
+    },
+
     applyStatus(row, column) {
-      if (row.applicationStatus === 0) {
+      if (row.applicationStatus == 0) {
         return '审核中'
-      } else if (row.applicationStatus === 1) {
+      } else if (row.applicationStatus == 1) {
         return '已通过'
       } else {
         return '已驳回'
@@ -581,11 +745,17 @@ export default {
       this.$refs[formName].validate((valid) => {
         if (valid) {
 
-          let starDate = this.$moment(this.queryFromData.picker[0]).format('YYYY-MM-DD')
-          let endDate = this.$moment(this.queryFromData.picker[1]).format('YYYY-MM-DD')
+          if (this.queryFromData.picker.length != 0) {
+            let starDate = this.$moment(this.queryFromData.picker[0]).format('YYYY-MM-DD HH:mm')
+            let endDate = this.$moment(this.queryFromData.picker[1]).format('YYYY-MM-DD HH:mm')
 
-          this.queryFromData.queryStarTime = starDate
-          this.queryFromData.queryEndTime = endDate
+            this.queryFromData.queryStarTime = starDate
+            this.queryFromData.queryEndTime = endDate
+          } else {
+            this.queryFromData.queryStarTime = null;
+            this.queryFromData.queryEndTime = null;
+          }
+
           console.log("this.queryFromData数据")
           console.log('器材名称: ' + this.queryFromData.equipment
               + '\n仓库: ' + this.queryFromData.warehouse
@@ -594,6 +764,33 @@ export default {
               + '\n原因: ' + this.queryFromData.reason
               + '\n状态: ' + this.queryFromData.applicationStatus
               + '\n审核人员: ' + this.queryFromData.auditor)
+
+          this.$axios.post("/tb/apply/adminSearch", this.queryFromData).then(res => {
+
+            let apply = res.data.data.applyList;
+            console.log("+++++++++++++")
+            console.log(apply)
+            this.tableData = [];
+
+            for (let i = 0; i < apply.length; i++) {
+              this.$set(this.tableData, i, {
+                id: apply[i].id,
+                username: apply[i].name,
+                name: apply[i].name,
+                applicationDate: apply[i].date,
+                className: apply[i].className,
+                equipment: apply[i].equipment,
+                num: apply[i].num,
+                warehouse: apply[i].warehouse,
+                reason: apply[i].reason,
+                applicationStatus: apply[i].state,
+                auditorReason: apply[i].auditorReason,
+                auditorDate: apply[i].auditorDate,
+              })
+            }
+
+          })
+
         } else {
           console.log('error submit!!');
           return false;
@@ -603,9 +800,9 @@ export default {
 
     getCurrentTime() {
       let yy = new Date().getFullYear();
-      let mm = new Date().getMonth() + 1;
-      let dd = new Date().getDate();
-      let hh = new Date().getHours();
+      let mm = new Date().getMonth() + 1 < 10 ? '0' + (new Date().getMonth() + 1) : new Date().getMonth() + 1;
+      let dd = new Date().getDate() < 10 ? '0' + new Date().getDate() : new Date().getDate();
+      let hh = new Date().getHours() < 10 ? '0' + new Date().getHours() : new Date().getHours();
       let mf = new Date().getMinutes() < 10 ? '0' + new Date().getMinutes() : new Date().getMinutes();
 
       let dateValue = yy + '-' + mm + '-' + dd + ' ' + hh + ':' + mf;
@@ -647,6 +844,9 @@ export default {
 
     resetQueryForm(formName) {
       this.$refs[formName].resetFields();
+      this.tableData = [];
+      this.queryFromData.state = this.applicationStatusOptions[3].value;
+      this.getApplyInfo();
     }
   },
 
@@ -666,7 +866,6 @@ export default {
 .el-table >>> .warning-row {
   background: #faecd8;
 }
-
 
 .block {
   margin-top: 45px;

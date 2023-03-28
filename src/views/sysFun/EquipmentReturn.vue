@@ -705,15 +705,11 @@ export default {
 
         for (let i = 0; i < classifications.length; i++) {
 
-          if (classifications[i].className == "固定资产") {
-            continue;
-          }
-
-          this.$set(this.test, i - 1, {
+          this.$set(this.test, i, {
             label: classifications[i].className,
           })
 
-          this.$set(this.classNameOptions, i - 1, {
+          this.$set(this.classNameOptions, i, {
             label: classifications[i].className,
             value: classifications[i].className,
           })

@@ -476,7 +476,6 @@ export default {
       return false
     },
 
-
     getUserInfo() {
       this.$axios.get("/tb/userInfo").then(res => {
 
@@ -548,15 +547,11 @@ export default {
 
         for (let i = 0; i < classifications.length; i++) {
 
-          if (classifications[i].className == "固定资产") {
-            continue;
-          }
-
-          this.$set(this.test, i - 1, {
+          this.$set(this.test, i, {
             label: classifications[i].className,
           })
 
-          this.$set(this.classNameOptions, i - 1, {
+          this.$set(this.classNameOptions, i, {
             label: classifications[i].className,
             value: classifications[i].className,
           })
@@ -586,7 +581,6 @@ export default {
 
       })
     },
-
 
     getApplyInfo() {
       this.$axios.get("/tb/apply/info").then(res => {
@@ -618,8 +612,6 @@ export default {
             console.log(use)
 
             this.tableData = [];
-
-
 
             for (let i = 0; i < use.length; i++) {
 

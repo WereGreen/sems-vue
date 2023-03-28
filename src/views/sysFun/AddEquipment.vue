@@ -27,6 +27,8 @@
 
         <el-form-item label="器材名称" prop="equipment">
           <el-select v-model="queryFromData.equipment"
+                     clearable
+                     filterable
                      style="width: 180px;"
                      clearable placeholder="请选择器材">
 
@@ -135,19 +137,6 @@
                  style="align-items: center;"
                  label-position="right">
 
-          <el-form-item label="器材分类" prop="className">
-            <el-select v-model="applyFromData.className"
-                       filterable
-                       clearable
-                       placeholder="请选择分类">
-              <el-option
-                  v-for="item in classNameOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value">
-              </el-option>
-            </el-select>
-          </el-form-item>
 
           <el-form-item label="器材名称" prop="equipment">
             <el-select v-model="applyFromData.equipment" clearable placeholder="请选择器材">
@@ -465,6 +454,11 @@ export default {
 
       userInfo: {},
       username: '',
+      applyTable: {
+        classState: 1,
+        name: '',
+      },
+
 
     }
   },
@@ -486,6 +480,7 @@ export default {
         this.username = res.data.data.username;
         console.log("username:" + this.username)
         this.queryFromData.name = res.data.data.username
+        this.applyTable.name = res.data.data.username;
 
         console.log(res.data.data)
 
@@ -537,15 +532,11 @@ export default {
 
         for (let i = 0; i < classifications.length; i++) {
 
-          if (classifications[i].className == "固定资产") {
-            continue;
-          }
-
-          this.$set(this.test, i - 1, {
+          this.$set(this.test, i, {
             label: classifications[i].className,
           })
 
-          this.$set(this.classNameOptions, i - 1, {
+          this.$set(this.classNameOptions, i, {
             label: classifications[i].className,
             value: classifications[i].className,
           })
@@ -578,38 +569,34 @@ export default {
 
     getAuditorInfo() {
 
-      this.$axios.get("/tb/apply/info").then(res => {
-
-        let apply = res.data.data.applyList;
-        console.log(apply)
-
-        this.tableData = [];
-
-        for (let i = 0; i < apply.length; i++) {
-          this.$set(this.tableData, i, {
-
-            id: apply[i].id,
-            username: apply[i].name,
-            name: this.name,
-            applicationDate: apply[i].date,
-            className: apply[i].className,
-            equipment: apply[i].equipment,
-            num: apply[i].num,
-            warehouse: apply[i].warehouse,
-            reason: apply[i].reason,
-            state: apply[i].state,
-            explain: apply[i].auditorReason,
-            auditorName: apply[i].auditorName,
-            auditorDate: apply[i].auditorDate,
-
-          })
-
-          console.log("name：" + this.tableData.name)
-          console.log("username：" + this.tableData.username)
+      this.$axios.get("/tb/apply/info", {
+        // 传递的参数
+        params: {
+          classState: 1,
         }
+        // 回调函数,一定要使用箭头函数,不然this的指向不是vue示例
+      }).then(res => {
+            let apply = res.data.data.applyList;
+            this.tableData = [];
 
-
-      })
+            for (let i = 0; i < apply.length; i++) {
+              this.$set(this.tableData, i, {
+                id: apply[i].id,
+                username: apply[i].name,
+                name: this.name,
+                applicationDate: apply[i].date,
+                className: apply[i].className,
+                equipment: apply[i].equipment,
+                num: apply[i].num,
+                warehouse: apply[i].warehouse,
+                reason: apply[i].reason,
+                state: apply[i].state,
+                explain: apply[i].auditorReason,
+                auditorName: apply[i].auditorName,
+                auditorDate: apply[i].auditorDate,
+              })
+            }
+          })
     },
 
     addApplyDialogclose() {
@@ -634,30 +621,17 @@ export default {
 
           this.applyFromData.date = this.getCurrentTime();
           this.applyFromData.state = 0;
-          this.applyFromData.classState = 1;
+          this.applyFromData.classState = this.applyTable.classState;
           this.applyFromData.name = this.username;
 
-          let equipmentState = false;
 
-
-          for (let i = 0; i < this.classNameOptions.length; i++) {
-
-            if (this.applyFromData.className == this.classNameOptions[i].label) {
-
-              for (let j = 0; j < this.options[i].options.length; j++) {
-
-                if (this.applyFromData.equipment == this.options[i].options[j].equipment) {
-                  equipmentState = true;
-                }
-              }
+          for (let j = 0; j < this.equipmentInfo.length; j++) {
+            if (this.applyFromData.equipment == this.equipmentInfo[j].equipment) {
+              this.applyFromData.className = this.equipmentInfo[j].className
+              break;
             }
           }
 
-          if (!equipmentState) {
-            this.$message.error('器材与分类冲突！请重新选择！');
-            return;
-
-          }
 
           console.log("applyFromData数据")
           console.log(this.applyFromData)
@@ -727,6 +701,7 @@ export default {
             this.queryFromData.queryStarTime = this.queryFromData.picker[0];
             this.queryFromData.queryEndTime = this.queryFromData.picker[1];
           }
+          this.queryFromData.classState = this.applyTable.classState;
 
           console.log("this.queryFromData数据");
           console.log(

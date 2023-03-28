@@ -81,587 +81,620 @@
         </el-form>
 
 
+      </div>
+
+
+      <div style="box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);padding-bottom: 15px;">
+
+        <!--  表格  -->
+        <div>
+          <el-table
+              :data="tableData.slice((currentPage-1)*pageSize,currentPage*pageSize)"
+              :cell-style="rowStyle"
+              :row-class-name="tableRowClassName"
+              :default-sort="{prop: 'date', order: 'descending'}"
+              style="width: 100%">
+            <el-table-column
+                prop="applicationDate"
+                label="操作时间"
+                sortable
+                align="center">
+            </el-table-column>
+
+            <el-table-column
+                prop="name"
+                label="操作人员"
+                align="center">
+            </el-table-column>
+
+            <el-table-column
+                prop="operationStatus"
+                label="操作类型"
+                :formatter="operationStatus"
+                align="center">
+            </el-table-column>
+
+            <el-table-column
+                prop="reason"
+                align="center"
+                :show-overflow-tooltip="true"
+                label="具体操作">
+            </el-table-column>
+
+          </el-table>
+        </div>
+
+        <!--  分页  -->
+        <div class="block">
+          <el-pagination
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+              :current-page="currentPage"
+              :page-sizes="[6, 12, 18, 24]"
+              :page-size="pageSize"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="tableData.length">
+          </el-pagination>
+        </div>
+
+      </div>
 
     </div>
 
+    <!--  操作区  -->
+    <div class="right">
 
-    <div style="box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);padding-bottom: 15px;">
+      <div style="font-size: 20px;margin: 20px;">操作区</div>
 
-      <!--  表格  -->
-      <div>
-        <el-table
-            :data="tableData.slice((currentPage-1)*pageSize,currentPage*pageSize)"
-            :cell-style="rowStyle"
-            :row-class-name="tableRowClassName"
-            :default-sort="{prop: 'date', order: 'descending'}"
-            style="width: 100%">
-          <el-table-column
-              prop="applicationDate"
-              label="操作时间"
-              sortable
-              align="center">
-          </el-table-column>
+      <div style="display: flex; align-items: center; justify-content: center; width: 100%;height: 260px;">
 
-          <el-table-column
-              prop="name"
-              label="操作人员"
-              align="center">
-          </el-table-column>
-
-          <el-table-column
-              prop="operationStatus"
-              label="操作类型"
-              :formatter="operationStatus"
-              align="center">
-          </el-table-column>
-
-          <el-table-column
-              prop="reason"
-              align="center"
-              :show-overflow-tooltip="true"
-              label="具体操作">
-          </el-table-column>
-
-        </el-table>
-      </div>
-
-      <!--  分页  -->
-      <div class="block">
-        <el-pagination
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-            :current-page="currentPage"
-            :page-sizes="[6, 12, 18, 24]"
-            :page-size="pageSize"
-            layout="total, sizes, prev, pager, next, jumper"
-            :total="tableData.length">
-        </el-pagination>
-      </div>
-
-    </div>
-
-  </div>
-
-  <!--  操作区  -->
-  <div class="right">
-
-    <div style="font-size: 20px;margin: 20px;">操作区</div>
-
-    <div style="display: flex; align-items: center; justify-content: center; width: 100%;height: 260px;">
-
-      <div style="margin-right: 20px">
-        <el-card shadow="always" class="dataCard">
-          <div style="font-size: 18px;color: #606266">
-            现共有分类
-          </div>
-          <div style="color: #409EFF;font-size: 80px;
+        <div style="margin-right: 20px">
+          <el-card shadow="always" class="dataCard">
+            <div style="font-size: 18px;color: #606266">
+              现共有分类
+            </div>
+            <div style="color: #409EFF;font-size: 80px;
             text-align: center;line-height: 120px;width: 165px;margin-left: -20px">
-            {{countClass}}
-          </div>
-          <div style="font-size: 18px;color: #909399;float: right">
-            种
-          </div>
-        </el-card>
-      </div>
-
-
-      <div>
-        <el-card shadow="always" class="dataCard">
-          <div style="font-size: 18px;color: #606266">
-            现共有器材
-          </div>
-          <div style="color: #67C23A;font-size: 80px;
-            text-align: center;line-height: 120px;width: 165px;margin-left: -20px">
-            {{countEquipment}}
-          </div>
-          <div style="font-size: 18px;color: #909399;float: right">
-            种
-          </div>
-        </el-card>
-      </div>
-
-    </div>
-
-
-    <div style="display: flex; align-items: center; justify-content: center; width: 100%;height: 230px;">
-
-      <div style="margin-right: 20px" @click="managClass">
-        <el-card shadow="hover" class="dataCard">
-
-          <div style="font-size: 65px;text-align: center;line-height: 150px;margin-bottom: -20px; color: #409EFF;">
-            <i class="el-icon-guide"></i>
-          </div>
-
-          <div style="font-size: 18px;text-align: center;color: #606266;">
-            分类管理
-          </div>
-
-        </el-card>
-      </div>
-
-
-      <div @click="managEquipment">
-        <el-card shadow="hover" class="dataCard">
-
-          <div style="font-size: 65px;text-align: center;line-height: 150px;margin-bottom: -20px; color: #67C23A;">
-            <i class="el-icon-basketball"></i>
-          </div>
-
-          <div style="font-size: 18px;text-align: center;color: #606266;">
-            器材管理
-          </div>
-
-        </el-card>
-      </div>
-
-    </div>
-
-    <!--   分类管理   -->
-    <div>
-
-      <el-dialog
-          title="分类管理"
-          :visible.sync="managClassDialogVisible"
-          width="32%"
-          @close="managClassdialogclose()"
-          center>
-
-
-        <el-form :inline="true"
-                 :model="classQueryFromData"
-                 class="demo-form-inline"
-                 style="margin-left: 15px;"
-                 size="medium"
-                 ref="classQueryFromData">
-
-          <el-form-item label="分类名称" prop="classification">
-            <el-select
-                v-model="classQueryFromData.classification"
-                clearable
-                style="width: 170px"
-                placeholder="请选择分类">
-              <el-option
-                  v-for="item in classQueryFromData.classificationOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value">
-              </el-option>
-            </el-select>
-          </el-form-item>
-
-          <el-form-item>
-            <el-button type="primary" @click="submitQueryForm('classQueryFromData')">查询</el-button>
-          </el-form-item>
-          <el-form-item>
-            <el-button @click="resetQueryForm('classQueryFromData')">重置</el-button>
-          </el-form-item>
-        </el-form>
-
-
-        <el-table
-            :data="ClassTableData"
-            stripe
-            height="250"
-            style="width: 100%">
-          <el-table-column
-              prop="className"
-              label="分类名称"
-              align="center"
-          >
-          </el-table-column>
-          <el-table-column
-              prop="classOperation"
-              label="操作"
-              align="center"
-          >
-            <template slot-scope="scope">
-
-              <el-button type="primary"
-                         size="mini"
-                         plain round
-                         @click="modifyClass(scope.$index, scope.row)">修改
-              </el-button>
-
-              <el-button type="danger"
-                         size="mini"
-                         plain round
-                         @click="deleteClassMessageBox(scope.$index, scope.row)">删除
-              </el-button>
-
-            </template>
-
-          </el-table-column>
-        </el-table>
-
-
-        <div style="display: flex;align-items: center;justify-content: center;">
-          <el-button type="primary"
-                     round
-                     @click="addClass()"
-                     style="align-items: center; margin-top: 25px;">新增分类
-          </el-button>
+              {{ countClass }}
+            </div>
+            <div style="font-size: 18px;color: #909399;float: right">
+              种
+            </div>
+          </el-card>
         </div>
 
 
-      </el-dialog>
+        <div>
+          <el-card shadow="always" class="dataCard">
+            <div style="font-size: 18px;color: #606266">
+              现共有器材
+            </div>
+            <div style="color: #67C23A;font-size: 80px;
+            text-align: center;line-height: 120px;width: 165px;margin-left: -20px">
+              {{ countEquipment }}
+            </div>
+            <div style="font-size: 18px;color: #909399;float: right">
+              种
+            </div>
+          </el-card>
+        </div>
 
-      <!--    修改分类    -->
-
-      <el-dialog
-          title="修改分类"
-          :visible.sync="modifyClassDialogVisible"
-          width="30%"
-          center>
-
-        <el-form :inline="true"
-                 :model="modifyClassFromData"
-                 class="demo-form-inline"
-                 size="medium"
-                 :rules="modifyClassRules"
-                 style="display: flex;align-items: center;justify-content: center;"
-                 ref="modifyClassFromData">
-
-          <el-form-item label="分类名称" prop="modifyClassName">
-            <el-input
-                placeholder="请输入修改后的分类名称"
-                v-model="modifyClassFromData.modifyClassName"
-                clearable>
-            </el-input>
-          </el-form-item>
-
-        </el-form>
+      </div>
 
 
-        <span slot="footer" class="dialog-footer">
+      <div style="display: flex; align-items: center; justify-content: center; width: 100%;height: 230px;">
+
+        <div style="margin-right: 20px" @click="managClass">
+          <el-card shadow="hover" class="dataCard">
+
+            <div style="font-size: 65px;text-align: center;line-height: 150px;margin-bottom: -20px; color: #409EFF;">
+              <i class="el-icon-guide"></i>
+            </div>
+
+            <div style="font-size: 18px;text-align: center;color: #606266;">
+              分类管理
+            </div>
+
+          </el-card>
+        </div>
+
+
+        <div @click="managEquipment">
+          <el-card shadow="hover" class="dataCard">
+
+            <div style="font-size: 65px;text-align: center;line-height: 150px;margin-bottom: -20px; color: #67C23A;">
+              <i class="el-icon-basketball"></i>
+            </div>
+
+            <div style="font-size: 18px;text-align: center;color: #606266;">
+              器材管理
+            </div>
+
+          </el-card>
+        </div>
+
+      </div>
+
+      <!--   分类管理   -->
+      <div>
+
+        <el-dialog
+            title="分类管理"
+            :visible.sync="managClassDialogVisible"
+            width="32%"
+            @close="managClassdialogclose()"
+            center>
+
+
+          <el-form :inline="true"
+                   :model="classQueryFromData"
+                   class="demo-form-inline"
+                   style="margin-left: 15px;"
+                   size="medium"
+                   ref="classQueryFromData">
+
+            <el-form-item label="分类名称" prop="classification">
+              <el-input
+                  placeholder="请输入内容"
+                  maxlength="10"
+                  style="width: 170px"
+                  show-word-limit
+                  v-model="classQueryFromData.className"
+                  clearable>
+              </el-input>
+            </el-form-item>
+
+            <el-form-item>
+              <el-button type="primary" @click="submitClassQueryForm('classQueryFromData')">查询</el-button>
+            </el-form-item>
+            <el-form-item>
+              <el-button @click="resetQueryForm('classQueryFromData')">重置</el-button>
+            </el-form-item>
+          </el-form>
+
+
+          <el-table
+              :data="classTableData"
+              stripe
+              height="250"
+              style="width: 100%">
+            <el-table-column
+                prop="className"
+                label="分类名称"
+                align="center"
+            >
+            </el-table-column>
+            <el-table-column
+                prop="classOperation"
+                label="操作"
+                align="center"
+            >
+              <template slot-scope="scope">
+
+                <el-button type="primary"
+                           size="mini"
+                           plain round
+                           @click="modifyClass(scope.$index, scope.row)">修改
+                </el-button>
+
+                <el-button type="danger"
+                           size="mini"
+                           plain round
+                           @click="deleteClassMessageBox(scope.$index, scope.row)">删除
+                </el-button>
+
+              </template>
+
+            </el-table-column>
+          </el-table>
+
+
+          <div style="display: flex;align-items: center;justify-content: center;">
+            <el-button type="primary"
+                       round
+                       @click="addClass()"
+                       style="align-items: center; margin-top: 25px;">新增分类
+            </el-button>
+          </div>
+
+
+        </el-dialog>
+
+        <!--    修改分类    -->
+
+        <el-dialog
+            title="修改分类"
+            :visible.sync="modifyClassDialogVisible"
+            width="30%"
+            center>
+
+          <el-form :inline="true"
+                   :model="modifyClassFromData"
+                   class="demo-form-inline"
+                   size="medium"
+                   :rules="modifyClassRules"
+                   style="display: flex;align-items: center;justify-content: center;"
+                   ref="modifyClassFromData">
+
+            <el-form-item label="分类名称" prop="className">
+              <el-input
+                  placeholder="请输入修改后的分类名称"
+                  v-model="modifyClassFromData.className"
+                  clearable>
+              </el-input>
+            </el-form-item>
+
+          </el-form>
+
+
+          <span slot="footer" class="dialog-footer">
             <el-button @click="modifyClassDialogVisible = false">取 消</el-button>
             <el-button type="primary" @click="modifyClassMessageBox">确 定</el-button>
           </span>
 
-      </el-dialog>
+        </el-dialog>
 
 
-      <!--    新增分类    -->
+        <!--    新增分类    -->
 
-      <el-dialog
-          title="新增分类"
-          :visible.sync="addClassDialogVisible"
-          width="30%"
-          @close="addClassdialogclose()"
-          center>
+        <el-dialog
+            title="新增分类"
+            :visible.sync="addClassDialogVisible"
+            width="30%"
+            @close="addClassdialogclose()"
+            center>
 
-        <el-form :inline="true"
-                 :model="addClassFromData"
-                 class="demo-form-inline"
-                 size="medium"
-                 :rules="addClassRules"
-                 style="display: flex;align-items: center;justify-content: center;"
-                 ref="addClassFromData">
+          <el-form :inline="true"
+                   :model="addClassFromData"
+                   class="demo-form-inline"
+                   size="medium"
+                   :rules="addClassRules"
+                   style="display: flex;align-items: center;justify-content: center;"
+                   ref="addClassFromData">
 
-          <el-form-item label="分类名称" prop="addClassName">
-            <el-input
-                placeholder="请输入新增的分类名称"
-                v-model="addClassFromData.addClassName"
-                clearable>
-            </el-input>
-          </el-form-item>
+            <el-form-item label="分类名称" prop="className">
+              <el-input
+                  placeholder="请输入新增的分类名称"
+                  v-model="addClassFromData.className"
+                  clearable>
+              </el-input>
+            </el-form-item>
 
-        </el-form>
+          </el-form>
 
-        <span slot="footer" class="dialog-footer">
+          <span slot="footer" class="dialog-footer">
             <el-button @click="addClassDialogVisible = false">取 消</el-button>
             <el-button type="primary" @click="submitAddClassFromData(addClassFromData)">确 定</el-button>
           </span>
 
-      </el-dialog>
+        </el-dialog>
 
+        <!--    删除分类    -->
 
-    </div>
+        <el-dialog
+            title="请为该分类下器材选择新的分类"
+            :visible.sync="deleteClassDialogVisible"
+            width="30%"
+            center>
 
-    <!--   器材管理   -->
-    <div>
+          <el-form :inline="true"
+                   :model="updateEquipmentClassFromData"
+                   class="demo-form-inline"
+                   size="medium"
+                   :rules="updateClassRules"
+                   style="display: flex;align-items: center;justify-content: center;"
+                   ref="updateEquipmentClassFromData">
 
-      <el-dialog
-          title="器材管理"
-          :visible.sync="managEquipmentDialogVisible"
-          width="40%"
-          @close="managClassdialogclose()"
-          center>
-
-
-        <el-form :inline="true"
-                 :model="equipmentQueryFromData"
-                 class="demo-form-inline"
-                 size="medium"
-                 ref="equipmentQueryFromData">
-
-          <div style="display: flex;align-items: center;justify-content: center">
-            <el-form-item label="分类名称" prop="className">
-              <el-select
-                  v-model="equipmentQueryFromData.className"
-                  clearable
-                  style="width: 170px"
-                  placeholder="请选择分类">
+            <el-form-item label="器材分类" prop="className">
+              <el-select v-model="updateEquipmentClassFromData.className"
+                         filterable
+                         style="width: 180px;"
+                         clearable
+                         placeholder="请选择分类">
                 <el-option
-                    v-for="item in classQueryFromData.classificationOptions"
+                    v-for="item in classNameOptions"
                     :key="item.value"
+                    :disabled="item.value == deleteClassName"
                     :label="item.label"
                     :value="item.value">
                 </el-option>
               </el-select>
             </el-form-item>
 
-            <el-form-item label="器材名称" prop="equipmentName">
-              <el-select
-                  v-model="equipmentQueryFromData.equipmentName"
-                  clearable
-                  style="width: 170px"
-                  placeholder="请选择器材">
-                <el-option
-                    v-for="item in classQueryFromData.classificationOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value">
-                </el-option>
-              </el-select>
-            </el-form-item>
-          </div>
+          </el-form>
 
 
-          <div style="display: flex;align-items: center;justify-content: center">
-            <el-form-item>
-              <el-button type="primary" @click="">查询</el-button>
-            </el-form-item>
-            <el-form-item>
-              <el-button @click="resetQueryForm('equipmentQueryFromData')">重置</el-button>
-            </el-form-item>
-          </div>
-        </el-form>
+          <span slot="footer" class="dialog-footer">
+            <el-button @click="deleteClassDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="deleteClassUpdateName(updateEquipmentClassFromData)">确 定</el-button>
+          </span>
+
+        </el-dialog>
 
 
-        <el-table
-            :data="equipmentTableData"
-            stripe
-            height="250"
-            style="width: 100%">
+      </div>
 
-          <el-table-column
-              prop="className"
-              label="分类名称"
-              align="center"
-          >
-          </el-table-column>
+      <!--   器材管理   -->
+      <div>
 
-          <el-table-column
-              prop="equipmentName"
-              label="器材名称"
-              align="center"
-          >
-          </el-table-column>
-
-          <el-table-column
-              prop="classOperation"
-              label="操作"
-              align="center"
-          >
-            <template slot-scope="scope">
-
-              <el-button type="primary"
-                         size="mini"
-                         plain round
-                         @click="modifyEquipment(scope.$index, scope.row)">修改
-              </el-button>
-
-              <el-button type="danger"
-                         size="mini"
-                         plain round
-                         @click="deleteEquipmentMessageBox(scope.$index, scope.row)">删除
-              </el-button>
-
-            </template>
-
-          </el-table-column>
-        </el-table>
+        <el-dialog
+            title="器材管理"
+            :visible.sync="managEquipmentDialogVisible"
+            width="40%"
+            @close="managClassdialogclose()"
+            center>
 
 
-        <div style="display: flex;align-items: center;justify-content: center;">
-          <el-button type="primary"
-                     round
-                     @click="addEquipment()"
-                     style="align-items: center; margin-top: 25px;">新增器材
-          </el-button>
-        </div>
+          <el-form :inline="true"
+                   :model="equipmentQueryFromData"
+                   class="demo-form-inline"
+                   size="medium"
+                   ref="equipmentQueryFromData">
+
+            <div style="display: flex;align-items: center;justify-content: center">
+              <el-form-item label="分类名称" prop="className">
+                <el-select
+                    v-model="equipmentQueryFromData.className"
+                    clearable
+                    style="width: 170px"
+                    placeholder="请选择分类">
+                  <el-option
+                      v-for="item in classQueryFromData.classificationOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+
+              <el-form-item label="器材名称" prop="equipmentName">
+                <el-select
+                    v-model="equipmentQueryFromData.equipmentName"
+                    clearable
+                    style="width: 170px"
+                    placeholder="请选择器材">
+                  <el-option
+                      v-for="item in classQueryFromData.classificationOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+            </div>
 
 
-      </el-dialog>
+            <div style="display: flex;align-items: center;justify-content: center">
+              <el-form-item>
+                <el-button type="primary" @click="">查询</el-button>
+              </el-form-item>
+              <el-form-item>
+                <el-button @click="resetQueryForm('equipmentQueryFromData')">重置</el-button>
+              </el-form-item>
+            </div>
+          </el-form>
 
-      <!--    修改器材    -->
 
-      <el-dialog
-          title="修改器材"
-          :visible.sync="modifyEquipmentDialogVisible"
-          width="30%"
-          center>
+          <el-table
+              :data="equipmentTableData"
+              stripe
+              height="250"
+              style="width: 100%">
 
-        <el-form :inline="true"
-                 :model="modifyEquipmentFromData"
-                 class="demo-form-inline"
-                 size="medium"
-                 :rules="modifyEquipmentRules"
-                 ref="modifyEquipmentFromData">
+            <el-table-column
+                prop="className"
+                label="分类名称"
+                align="center"
+            >
+            </el-table-column>
+
+            <el-table-column
+                prop="equipmentName"
+                label="器材名称"
+                align="center"
+            >
+            </el-table-column>
+
+            <el-table-column
+                prop="classOperation"
+                label="操作"
+                align="center"
+            >
+              <template slot-scope="scope">
+
+                <el-button type="primary"
+                           size="mini"
+                           plain round
+                           @click="modifyEquipment(scope.$index, scope.row)">修改
+                </el-button>
+
+                <el-button type="danger"
+                           size="mini"
+                           plain round
+                           @click="deleteEquipmentMessageBox(scope.$index, scope.row)">删除
+                </el-button>
+
+              </template>
+
+            </el-table-column>
+          </el-table>
 
 
           <div style="display: flex;align-items: center;justify-content: center;">
-
-            <el-form-item label="分类名称" prop="className">
-              <el-select
-                  v-model="modifyEquipmentFromData.className"
-                  clearable
-                  placeholder="请选择分类">
-                <el-option
-                    v-for="item in classQueryFromData.classificationOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value">
-                </el-option>
-              </el-select>
-            </el-form-item>
-
+            <el-button type="primary"
+                       round
+                       @click="addEquipment()"
+                       style="align-items: center; margin-top: 25px;">新增器材
+            </el-button>
           </div>
 
-          <div style="display: flex;align-items: center;justify-content: center;">
-            <el-form-item label="器材名称" prop="equipmentName">
-              <el-input
-                  placeholder="请输入修改后的器材名称"
-                  v-model="modifyEquipmentFromData.equipmentName"
-                  clearable>
-              </el-input>
-            </el-form-item>
-          </div>
 
-        </el-form>
+        </el-dialog>
+
+        <!--    修改器材    -->
+
+        <el-dialog
+            title="修改器材"
+            :visible.sync="modifyEquipmentDialogVisible"
+            width="30%"
+            center>
+
+          <el-form :inline="true"
+                   :model="modifyEquipmentFromData"
+                   class="demo-form-inline"
+                   size="medium"
+                   :rules="modifyEquipmentRules"
+                   ref="modifyEquipmentFromData">
 
 
-        <span slot="footer" class="dialog-footer">
+            <div style="display: flex;align-items: center;justify-content: center;">
+
+              <el-form-item label="分类名称" prop="className">
+                <el-select
+                    v-model="modifyEquipmentFromData.className"
+                    clearable
+                    placeholder="请选择分类">
+                  <el-option
+                      v-for="item in classQueryFromData.classificationOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+
+            </div>
+
+            <div style="display: flex;align-items: center;justify-content: center;">
+              <el-form-item label="器材名称" prop="equipmentName">
+                <el-input
+                    placeholder="请输入修改后的器材名称"
+                    v-model="modifyEquipmentFromData.equipmentName"
+                    clearable>
+                </el-input>
+              </el-form-item>
+            </div>
+
+          </el-form>
+
+
+          <span slot="footer" class="dialog-footer">
             <el-button @click="modifyEquipmentDialogVisible = false">取 消</el-button>
             <el-button type="primary" @click="modifyEquipmentMessageBox">确 定</el-button>
           </span>
 
-      </el-dialog>
+        </el-dialog>
 
 
-      <!--    新增器材    -->
-      <el-dialog title="新增器材"
-                 :visible.sync="addEquipmentDialogVisible"
-                 @close="addEquipmentdialogclose()"
-                 width="40%"
-                 center>
+        <!--    新增器材    -->
+        <el-dialog title="新增器材"
+                   :visible.sync="addEquipmentDialogVisible"
+                   @close="addEquipmentdialogclose()"
+                   width="40%"
+                   center>
 
-        <el-form :model="addEquipmentFromData" ref="addEquipmentFromData" :rules="addEquipmentRules">
-
-
-          <el-form-item label="分类名称" :label-width="formLabelWidth" prop="className">
-            <el-select
-                v-model="addEquipmentFromData.className"
-                clearable
-                placeholder="请选择分类">
-              <el-option
-                  v-for="item in classQueryFromData.classificationOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value">
-              </el-option>
-            </el-select>
-          </el-form-item>
-
-          <el-form-item label="器材名称" :label-width="formLabelWidth" prop="equipmentName">
-            <el-input
-                placeholder="请输入器材名称"
-                style="width: 221px"
-                v-model="addEquipmentFromData.equipmentName"
-                clearable>
-            </el-input>
-          </el-form-item>
-
-          <el-form-item label="由现有器材组成" :label-width="formLabelWidth">
-            <el-switch
-                v-model="value"
-                active-color="#409eff">
-            </el-switch>
-          </el-form-item>
+          <el-form :model="addEquipmentFromData" ref="addEquipmentFromData" :rules="addEquipmentRules">
 
 
-          <el-form-item label="初始库存" :label-width="formLabelWidth" prop="stockNum" v-if="!value">
-            <el-input-number
-                v-model="addEquipmentFromData.stockNum"
-                size="small"
-                style="width: 100px"
-                controls-position="right"
-                @change="handleChange"
-                :min="1" :max="10">
-            </el-input-number>
-          </el-form-item>
+            <el-form-item label="分类名称" :label-width="formLabelWidth" prop="className">
+              <el-select
+                  v-model="addEquipmentFromData.className"
+                  clearable
+                  placeholder="请选择分类">
+                <el-option
+                    v-for="item in classQueryFromData.classificationOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value">
+                </el-option>
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="器材名称" :label-width="formLabelWidth" prop="equipmentName">
+              <el-input
+                  placeholder="请输入器材名称"
+                  style="width: 221px"
+                  v-model="addEquipmentFromData.equipmentName"
+                  clearable>
+              </el-input>
+            </el-form-item>
+
+            <el-form-item label="由现有器材组成" :label-width="formLabelWidth">
+              <el-switch
+                  v-model="value"
+                  active-color="#409eff">
+              </el-switch>
+            </el-form-item>
 
 
-          <div class="equipmentInformation" v-if="value">
-            <el-form :label-width="formLabelWidth"
-                     v-for="(equipment, index) in addEquipmentFromData.equipments"
-                     :prop="'equipment.' + index + '.value'"
-                     :key="equipment.key"
-                     :model="equipment"
-                     ref="equipment"
-            >
-
-              <div style="display: flex">
-
-                <el-form-item label="器材名称" prop="equipmentValue">
-                  <el-select v-model="equipment.value"
-                             :key="equipment.key"
-                             style="width: 150px"
-                             clearable
-                             placeholder="请选择器材">
-                    <el-option
-                        v-for="item in showCityList(equipment.value)"
-                        :key="item.value"
-                        :label="item.label"
-                        :value="item.value">
-                    </el-option>
-                  </el-select>
-                </el-form-item>
-
-                <el-form-item label="数量"
-                              :label-width="formLabelWidth"
-                              style="margin-left: -50px"
-                              prop="num">
-                  <el-input-number v-model="equipment.num" controls-position="right" :min="1" :max="99" size="small"
-                                   style="width: 90px"></el-input-number>
-                </el-form-item>
-                <el-button class="btn" type="primary" icon="el-icon-plus" circle
-                           @click.prevent="addDomain(equipment)" :disabled="addFlag"></el-button>
-                <el-button class="btn" type="danger" icon="el-icon-delete" circle style="margin-left: 5px"
-                           @click.prevent="removeDomain(equipment)" :disabled="flag"></el-button>
-
-              </div>
+            <el-form-item label="初始库存" :label-width="formLabelWidth" prop="stockNum" v-if="!value">
+              <el-input-number
+                  v-model="addEquipmentFromData.stockNum"
+                  size="small"
+                  style="width: 100px"
+                  controls-position="right"
+                  @change="handleChange"
+                  :min="1" :max="10">
+              </el-input-number>
+            </el-form-item>
 
 
-            </el-form>
+            <div class="equipmentInformation" v-if="value">
+              <el-form :label-width="formLabelWidth"
+                       v-for="(equipment, index) in addEquipmentFromData.equipments"
+                       :prop="'equipment.' + index + '.value'"
+                       :key="equipment.key"
+                       :model="equipment"
+                       ref="equipment"
+              >
 
+                <div style="display: flex">
+
+                  <el-form-item label="器材名称" prop="equipmentValue">
+                    <el-select v-model="equipment.value"
+                               :key="equipment.key"
+                               style="width: 150px"
+                               clearable
+                               placeholder="请选择器材">
+                      <el-option
+                          v-for="item in showCityList(equipment.value)"
+                          :key="item.value"
+                          :label="item.label"
+                          :value="item.value">
+                      </el-option>
+                    </el-select>
+                  </el-form-item>
+
+                  <el-form-item label="数量"
+                                :label-width="formLabelWidth"
+                                style="margin-left: -50px"
+                                prop="num">
+                    <el-input-number v-model="equipment.num" controls-position="right" :min="1" :max="99" size="small"
+                                     style="width: 90px"></el-input-number>
+                  </el-form-item>
+                  <el-button class="btn" type="primary" icon="el-icon-plus" circle
+                             @click.prevent="addDomain(equipment)" :disabled="addFlag"></el-button>
+                  <el-button class="btn" type="danger" icon="el-icon-delete" circle style="margin-left: 5px"
+                             @click.prevent="removeDomain(equipment)" :disabled="flag"></el-button>
+
+                </div>
+
+              </el-form>
+
+            </div>
+          </el-form>
+
+          <div slot="footer" class="dialog-footer">
+            <el-button @click="addEquipmentDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="submitAddEquipmentFromData(addEquipmentFromData)">确 定</el-button>
           </div>
+        </el-dialog>
 
 
-        </el-form>
-
-
-        <div slot="footer" class="dialog-footer">
-          <el-button @click="addEquipmentDialogVisible = false">取 消</el-button>
-          <el-button type="primary" @click="submitAddEquipmentFromData(addEquipmentFromData)">确 定</el-button>
-        </div>
-      </el-dialog>
+      </div>
 
 
     </div>
-
-
-  </div>
 
   </div>
 
@@ -674,12 +707,12 @@ export default {
 
     return {
 
-      countClass: 3,
-      countEquipment: 330,
+      countClass: 0,
+      countEquipment: 0,
 
       addEquipmentFromData: {
 
-        addClassName: '',
+        className: '',
         addEquipmentName: '',
         stockNum: 1,
 
@@ -712,12 +745,17 @@ export default {
       value: false,
 
       addClassFromData: {
-        addClassName: '',
+        className: '',
       },
 
       modifyClassFromData: {
         oldName: '',
-        modifyClassName: '',
+        className: '',
+      },
+
+      updateEquipmentClassFromData: {
+        oldName: '',
+        className: '',
       },
 
       modifyEquipmentFromData: {
@@ -727,28 +765,13 @@ export default {
         className: '',
       },
 
-
       equipmentQueryFromData: {
         equipmentName: '',
         className: '',
       },
 
       classQueryFromData: {
-        classification: '',
-        classificationOptions: [
-          {
-            value: '武术',
-            label: '武术'
-          },
-          {
-            value: '小球',
-            label: '小球'
-          },
-          {
-            value: '大球',
-            label: '大球'
-          }
-        ],
+        className: '',
       },
 
       queryFromData: {
@@ -938,31 +961,10 @@ export default {
           operationStatus: -1
         },],
 
-      ClassTableData: [
+      classTableData: [
         {
-          className: '大球',
-        },
-        {
-          className: '武术',
-        },
-        {
-          className: '田径',
-        },
-        {
-          className: '比赛',
-        },
-        {
-          className: '大球',
-        },
-        {
-          className: '武术',
-        },
-        {
-          className: '田径',
-        },
-        {
-          className: '比赛',
-        },
+          className: '',
+        }
       ],
 
       equipmentTableData: [
@@ -990,13 +992,20 @@ export default {
       modifyEquipmentDialogVisible: false,
       addClassDialogVisible: false,
       addEquipmentDialogVisible: false,
+      deleteClassDialogVisible: false,
       formLabelWidth: '120px',
 
       flag: true,
       addFlag: false,
 
       modifyClassRules: {
-        modifyClassName: [
+        className: [
+          {required: true, message: '请输入分类！', trigger: ['change', 'blur']}
+        ],
+      },
+
+      updateClassRules: {
+        className: [
           {required: true, message: '请输入分类！', trigger: ['change', 'blur']}
         ],
       },
@@ -1012,7 +1021,7 @@ export default {
       },
 
       addClassRules: {
-        addClassName: [
+        className: [
           {required: true, message: '请输入需要添加的分类名称！', trigger: ['change', 'blur']}
         ]
       },
@@ -1031,15 +1040,101 @@ export default {
       },
 
 
-      userInfo: {}
+      userInfo: {},
+
+      options: [{
+        label: '',
+        options: [{
+          value: '',
+          label: ''
+        },]
+      },
+      ],
+
+      test: [
+        {
+          label: '',
+          options: [
+            {},
+          ]
+        }
+      ],
+
+      equipmentInfo: [
+        {},
+      ],
+
+      classNameOptions: [
+        {
+          label: '',
+          value: '',
+        },
+      ],
+      name: '',
+      username: '',
+      deleteClassName: '',
 
     }
   },
   created() {
-    this.getUserInfo()
+
+    this.getUserInfo();
+    this.getClassInfo();
+    this.getEquipmentInfo();
+
   },
 
   methods: {
+
+    getEquipmentInfo() {
+      this.$axios.get("/tb/equipment/info").then(res => {
+
+        let equipments = res.data.data.equipments;
+        this.equipmentInfo = equipments;
+
+        this.countEquipment = this.equipmentInfo.length;
+
+        for (let i = 0; i < this.test.length; i++) {
+          this.test[i].options = equipments.filter(item => {
+            return item.className == this.test[i].label;
+          })
+        }
+        this.options = this.test
+
+        console.log("this.options")
+        console.log(this.options)
+
+      })
+    },
+
+    getClassInfo() {
+
+      console.log("getClassInfo启动了")
+      this.$axios.get("/tb/classification/info").then(res => {
+
+        let classifications = res.data.data.classifications;
+
+        this.countClass = classifications.length;
+        this.classTableData = [];
+        for (let i = 0; i < classifications.length; i++) {
+
+          this.$set(this.test, i, {
+            label: classifications[i].className,
+          })
+
+          this.$set(this.classTableData, i, {
+            className: classifications[i].className,
+          })
+
+          this.$set(this.classNameOptions, i, {
+            label: classifications[i].className,
+            value: classifications[i].className,
+          })
+
+        }
+
+      })
+    },
 
     submitAddForm(formName) {
       this.$refs.addEquipmentFromData.validate((valid) => {
@@ -1083,9 +1178,13 @@ export default {
 
 
     getUserInfo() {
-      this.$axios.get("/sysUser/UserInfo").then(res => {
+      this.$axios.get("/tb/userInfo").then(res => {
+        this.name = res.data.data.name;
+        this.username = res.data.data.username;
+        console.log("username:" + this.username)
+        this.queryFromData.name = res.data.data.username;
+        console.log(res.data.data)
 
-        this.userInfo = res.data.data;
       })
     },
 
@@ -1099,7 +1198,6 @@ export default {
       this.flags()
       this.addFlag = false
     },
-
 
     addDomain() {
       let len = this.addEquipmentFromData.equipments.length
@@ -1139,8 +1237,26 @@ export default {
     },
 
     submitAddClassFromData(formName) {
+      this.$refs.addClassFromData.validate((valid) => {
+        if (valid) {
 
+          this.$axios.post("/tb/classification/addClass", this.addClassFromData).then(res => {
+
+            this.getClassInfo();
+            this.$message({
+              type: 'success',
+              message: '添加成功!'
+            });
+            this.addClassDialogVisible = false
+          })
+
+        } else {
+          console.log('error submit!!');
+          return false;
+        }
+      });
     },
+
     submitAddEquipmentFromData(formName) {
       this.$refs.addEquipmentFromData.validate((valid) => {
         if (valid) {
@@ -1195,22 +1311,37 @@ export default {
     },
 
     modifyClassMessageBox() {
-      this.$confirm('此操作将该分类名称由：“' + this.modifyClassFromData.oldName +
-          '” 修改为： “' + this.modifyClassFromData.modifyClassName + '” , 该操作不可撤回，是否继续?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        this.$message({
-          type: 'success',
-          message: '修改成功!'
+
+      if (this.modifyClassFromData.oldName != this.modifyClassFromData.className) {
+        this.$confirm('此操作将该分类名称由：“' + this.modifyClassFromData.oldName +
+            '” 修改为： “' + this.modifyClassFromData.className + '” , 该操作不可撤回，是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+
+          this.$axios.post("/tb/classification/revise", this.modifyClassFromData).then(res => {
+
+            this.getClassInfo();
+            this.$message({
+              type: 'success',
+              message: '修改成功!'
+            });
+            this.modifyClassDialogVisible = false
+
+          })
+
+        }).catch(() => {
+          this.$message({
+            type: 'info',
+            message: '已取消修改'
+          });
         });
-      }).catch(() => {
-        this.$message({
-          type: 'info',
-          message: '已取消修改'
-        });
-      });
+      } else {
+        this.modifyClassDialogVisible = false;
+      }
+
+
     },
 
     modifyEquipmentMessageBox() {
@@ -1234,6 +1365,59 @@ export default {
       });
     },
 
+    delectClass() {
+
+      this.$axios.delete("/tb/classification/delete", {
+        // 传递的参数
+        data: {
+          className: this.deleteClassName,
+        }
+      }).then(res => {
+
+        this.$message({
+          type: 'success',
+          message: '删除成功!'
+        });
+
+        this.getClassInfo();
+
+      })
+
+
+    },
+
+    deleteClassUpdateName(formName) {
+      this.$refs.updateEquipmentClassFromData.validate((valid) => {
+        if (valid) {
+
+          let updateState = false;
+          this.$axios.post("/tb/equipment/update", this.updateEquipmentClassFromData).then(res => {
+
+            updateState = true;
+
+            console.log("updateState")
+            console.log(updateState)
+
+            if (updateState) {
+              this.delectClass();
+              this.getEquipmentInfo();
+              this.deleteClassDialogVisible = false;
+            }else {
+              this.$message({
+                type: 'warning',
+                message: '删除失败!'
+              });
+            }
+
+          })
+        } else {
+          console.log('error submit!!');
+          return false;
+        }
+      })
+    },
+
+
     deleteClassMessageBox(index, row) {
       this.$confirm('此操作将删除名称为：“' + row.className +
           '” 的分类 , 该操作不可撤回，是否继续?', '提示', {
@@ -1241,10 +1425,21 @@ export default {
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        this.$message({
-          type: 'success',
-          message: '删除成功!'
-        });
+
+        let equiments = this.equipmentInfo;
+
+        for (let i = 0; i < equiments.length; i++) {
+          if (row.className == equiments[i].className) {
+            this.updateEquipmentClassFromData.oldName = equiments[i].className;
+            this.deleteClassName = equiments[i].className;
+            this.deleteClassDialogVisible = true;
+            return;
+          }
+        }
+
+        this.deleteClassName = row.className;
+        this.delectClass();
+
       }).catch(() => {
         this.$message({
           type: 'info',
@@ -1275,7 +1470,7 @@ export default {
     modifyClass(index, row) {
 
       this.modifyClassFromData.oldName = row.className;
-      this.modifyClassFromData.modifyClassName = row.className;
+      this.modifyClassFromData.className = row.className;
 
       this.modifyClassDialogVisible = true;
     },
@@ -1332,6 +1527,39 @@ export default {
       });
     },
 
+    submitClassQueryForm(formName) {
+      this.$refs[formName].validate((valid) => {
+        if (valid) {
+          this.$axios.get("/tb/classification/search", {
+            // 传递的参数
+            params: {
+              className: this.classQueryFromData.className,
+            }
+            // 回调函数,一定要使用箭头函数,不然this的指向不是vue示例
+          }).then(res => {
+
+            let classifications = res.data.data.classifications;
+            this.classTableData = []
+
+            console.log("1111111111111")
+            console.log(classifications)
+
+            if (classifications) {
+              for (let i = 0; i < classifications.length; i++) {
+                this.$set(this.classTableData, i, {
+                  className: classifications[i].className,
+                })
+              }
+            }
+          })
+
+        } else {
+          console.log('error submit!!');
+          return false;
+        }
+      });
+    },
+
     submitQueryForm(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
@@ -1358,9 +1586,9 @@ export default {
 
     getCurrentTime() {
       let yy = new Date().getFullYear();
-      let mm = new Date().getMonth() + 1;
-      let dd = new Date().getDate();
-      let hh = new Date().getHours();
+      let mm = new Date().getMonth() + 1 < 10 ? '0' + (new Date().getMonth() + 1) : new Date().getMonth() + 1;
+      let dd = new Date().getDate() < 10 ? '0' + new Date().getDate() : new Date().getDate();
+      let hh = new Date().getHours() < 10 ? '0' + new Date().getHours() : new Date().getHours();
       let mf = new Date().getMinutes() < 10 ? '0' + new Date().getMinutes() : new Date().getMinutes();
 
       let dateValue = yy + '-' + mm + '-' + dd + ' ' + hh + ':' + mf;
@@ -1402,6 +1630,19 @@ export default {
 
     resetQueryForm(formName) {
       this.$refs[formName].resetFields();
+      this.classQueryFromData.className = '';
+      this.$axios.get("/tb/classification/info").then(res => {
+
+        let classifications = res.data.data.classifications;
+
+        this.classTableData = []
+
+        for (let i = 0; i < classifications.length; i++) {
+          this.$set(this.classTableData, i, {
+            className: classifications[i].className,
+          })
+        }
+      })
     }
   },
 
