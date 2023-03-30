@@ -225,7 +225,6 @@
             @close="managClassdialogclose()"
             center>
 
-
           <el-form :inline="true"
                    :model="classQueryFromData"
                    class="demo-form-inline"
@@ -436,10 +435,11 @@
                 <el-select
                     v-model="equipmentQueryFromData.className"
                     clearable
+                    filterable
                     style="width: 170px"
                     placeholder="请选择分类">
                   <el-option
-                      v-for="item in classQueryFromData.classificationOptions"
+                      v-for="item in classNameOptions"
                       :key="item.value"
                       :label="item.label"
                       :value="item.value">
@@ -451,14 +451,20 @@
                 <el-select
                     v-model="equipmentQueryFromData.equipmentName"
                     clearable
+                    filterable
                     style="width: 170px"
                     placeholder="请选择器材">
-                  <el-option
-                      v-for="item in classQueryFromData.classificationOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value">
-                  </el-option>
+                  <el-option-group
+                      v-for="group in options"
+                      :key="group.label"
+                      :label="group.label">
+                    <el-option
+                        v-for="item in group.options"
+                        :key="item.equipment"
+                        :label="item.equipment"
+                        :value="item.equipment">
+                    </el-option>
+                  </el-option-group>
                 </el-select>
               </el-form-item>
             </div>
@@ -466,10 +472,10 @@
 
             <div style="display: flex;align-items: center;justify-content: center">
               <el-form-item>
-                <el-button type="primary" @click="">查询</el-button>
+                <el-button type="primary" @click="submitEquipmentQueryForm">查询</el-button>
               </el-form-item>
               <el-form-item>
-                <el-button @click="resetQueryForm('equipmentQueryFromData')">重置</el-button>
+                <el-button @click="resetEquipmentQueryForm('equipmentQueryFromData')">重置</el-button>
               </el-form-item>
             </div>
           </el-form>
@@ -489,7 +495,7 @@
             </el-table-column>
 
             <el-table-column
-                prop="equipmentName"
+                prop="equipment"
                 label="器材名称"
                 align="center"
             >
@@ -533,55 +539,103 @@
 
         <!--    修改器材    -->
 
-        <el-dialog
-            title="修改器材"
-            :visible.sync="modifyEquipmentDialogVisible"
-            width="30%"
-            center>
+        <el-dialog title="修改器材"
+                   :visible.sync="modifyEquipmentDialogVisible"
+                   @close="modifyEquipmentDialogclose()"
+                   width="40%"
+                   center>
 
-          <el-form :inline="true"
-                   :model="modifyEquipmentFromData"
-                   class="demo-form-inline"
-                   size="medium"
-                   :rules="modifyEquipmentRules"
-                   ref="modifyEquipmentFromData">
+          <el-form :model="modifyEquipmentFromData" ref="modifyEquipmentFromData" :rules="modifyEquipmentRules">
 
+            <el-form-item label="分类名称" :label-width="formLabelWidth" prop="className">
+              <el-select
+                  v-model="modifyEquipmentFromData.className"
+                  clearable
+                  filterable
+                  placeholder="请选择分类">
+                <el-option
+                    v-for="item in classNameOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value">
+                </el-option>
+              </el-select>
+            </el-form-item>
 
-            <div style="display: flex;align-items: center;justify-content: center;">
+            <el-form-item label="器材名称" :label-width="formLabelWidth" prop="equipment">
+              <el-input
+                  placeholder="请输入修改后的器材名称"
+                  style="width: 221px"
+                  v-model="modifyEquipmentFromData.equipment"
+                  @input="(val) => changeInputEvent(val, modifyEquipmentFromData)"
+                  clearable>
+              </el-input>
+            </el-form-item>
 
-              <el-form-item label="分类名称" prop="className">
-                <el-select
-                    v-model="modifyEquipmentFromData.className"
-                    clearable
-                    placeholder="请选择分类">
-                  <el-option
-                      v-for="item in classQueryFromData.classificationOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value">
-                  </el-option>
-                </el-select>
-              </el-form-item>
+            <el-form-item label="由现有器材组成" :label-width="formLabelWidth">
+              <el-switch
+                  v-model="modifyEquipmentFromData.state"
+                  active-color="#409eff">
+              </el-switch>
+            </el-form-item>
+
+            <div class="equipmentInformation" v-if="modifyEquipmentFromData.state">
+              <el-form :label-width="formLabelWidth"
+                       v-for="(equipment, index) in modifyEquipmentFromData.equipments"
+                       :prop="'equipment.' + index + '.value'"
+                       :key="equipment.key"
+                       :model="equipment"
+                       ref="equipment"
+              >
+
+                <div style="display: flex">
+
+                  <el-form-item label="器材名称" prop="value">
+                    <el-select v-model="equipment.equipment"
+                               :key="equipment.key"
+                               style="width: 150px"
+                               clearable
+                               filterable
+                               placeholder="请选择器材">
+
+                      <el-option-group
+                          v-for="group in options"
+                          :key="group.label"
+                          :label="group.label">
+                        <el-option
+                            v-for="item in group.options"
+                            :key="item.equipment"
+                            :label="item.equipment"
+                            :disabled="optionStatus(item.equipment)"
+                            :value="item.equipment">
+                        </el-option>
+                      </el-option-group>
+                    </el-select>
+                  </el-form-item>
+
+                  <el-form-item label="数量"
+                                :label-width="formLabelWidth"
+                                style="margin-left: -50px"
+                                prop="num">
+                    <el-input-number v-model="equipment.num" controls-position="right" :min="1" :max="99" size="small"
+                                     style="width: 90px"></el-input-number>
+                  </el-form-item>
+                  <el-button class="btn" type="primary" icon="el-icon-plus" circle
+                             @click.prevent="addEquipments(equipment)" :disabled="addFlag"></el-button>
+                  <el-button class="btn" type="danger" icon="el-icon-delete" circle style="margin-left: 5px"
+                             @click.prevent="removeEquipments(equipment)" :disabled="removeFlag"></el-button>
+
+                </div>
+
+              </el-form>
 
             </div>
-
-            <div style="display: flex;align-items: center;justify-content: center;">
-              <el-form-item label="器材名称" prop="equipmentName">
-                <el-input
-                    placeholder="请输入修改后的器材名称"
-                    v-model="modifyEquipmentFromData.equipmentName"
-                    clearable>
-                </el-input>
-              </el-form-item>
-            </div>
-
           </el-form>
 
-
-          <span slot="footer" class="dialog-footer">
+          <div slot="footer" class="dialog-footer">
             <el-button @click="modifyEquipmentDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="modifyEquipmentMessageBox">确 定</el-button>
-          </span>
+            <el-button type="primary" @click="modifyEquipmentMessageBox('modifyEquipmentFromData')">确 定</el-button>
+          </div>
 
         </el-dialog>
 
@@ -602,7 +656,7 @@
                   clearable
                   placeholder="请选择分类">
                 <el-option
-                    v-for="item in classQueryFromData.classificationOptions"
+                    v-for="item in classNameOptions"
                     :key="item.value"
                     :label="item.label"
                     :value="item.value">
@@ -610,36 +664,23 @@
               </el-select>
             </el-form-item>
 
-            <el-form-item label="器材名称" :label-width="formLabelWidth" prop="equipmentName">
+            <el-form-item label="器材名称" :label-width="formLabelWidth" prop="equipment">
               <el-input
                   placeholder="请输入器材名称"
                   style="width: 221px"
-                  v-model="addEquipmentFromData.equipmentName"
+                  v-model="addEquipmentFromData.equipment"
                   clearable>
               </el-input>
             </el-form-item>
 
             <el-form-item label="由现有器材组成" :label-width="formLabelWidth">
               <el-switch
-                  v-model="value"
+                  v-model="addEquipmentFromData.state"
                   active-color="#409eff">
               </el-switch>
             </el-form-item>
 
-
-            <el-form-item label="初始库存" :label-width="formLabelWidth" prop="stockNum" v-if="!value">
-              <el-input-number
-                  v-model="addEquipmentFromData.stockNum"
-                  size="small"
-                  style="width: 100px"
-                  controls-position="right"
-                  @change="handleChange"
-                  :min="1" :max="10">
-              </el-input-number>
-            </el-form-item>
-
-
-            <div class="equipmentInformation" v-if="value">
+            <div class="equipmentInformation" v-if="addEquipmentFromData.state">
               <el-form :label-width="formLabelWidth"
                        v-for="(equipment, index) in addEquipmentFromData.equipments"
                        :prop="'equipment.' + index + '.value'"
@@ -651,17 +692,23 @@
                 <div style="display: flex">
 
                   <el-form-item label="器材名称" prop="equipmentValue">
-                    <el-select v-model="equipment.value"
+                    <el-select v-model="equipment.equipment"
                                :key="equipment.key"
                                style="width: 150px"
                                clearable
                                placeholder="请选择器材">
-                      <el-option
-                          v-for="item in showCityList(equipment.value)"
-                          :key="item.value"
-                          :label="item.label"
-                          :value="item.value">
-                      </el-option>
+                      <el-option-group
+                          v-for="group in options"
+                          :key="group.label"
+                          :label="group.label">
+                        <el-option
+                            v-for="item in group.options"
+                            :key="item.equipment"
+                            :label="item.equipment"
+                            :disabled="optionAddStatus(item.equipment)"
+                            :value="item.equipment">
+                        </el-option>
+                      </el-option-group>
                     </el-select>
                   </el-form-item>
 
@@ -673,9 +720,9 @@
                                      style="width: 90px"></el-input-number>
                   </el-form-item>
                   <el-button class="btn" type="primary" icon="el-icon-plus" circle
-                             @click.prevent="addDomain(equipment)" :disabled="addFlag"></el-button>
+                             @click.prevent="addNewEquipments(equipment)" :disabled="addFlag"></el-button>
                   <el-button class="btn" type="danger" icon="el-icon-delete" circle style="margin-left: 5px"
-                             @click.prevent="removeDomain(equipment)" :disabled="flag"></el-button>
+                             @click.prevent="removeNewEquipments(equipment)" :disabled="removeFlag"></el-button>
 
                 </div>
 
@@ -711,38 +758,19 @@ export default {
       countEquipment: 0,
 
       addEquipmentFromData: {
-
         className: '',
-        addEquipmentName: '',
-        stockNum: 1,
-
+        equipment: '',
+        state: false,
+        combination: 0,
         equipments: [{
-          value: '',
+          equipment: '',
           num: 1,
-
+          className: '',
         }],
-        equipmentOptions: [{
-          value: '乒乓球',
-          label: '乒乓球',
-        }, {
-          value: '羽毛球',
-          label: '羽毛球',
-        }, {
-          value: '篮球',
-          label: '篮球',
-        }, {
-          value: '足球',
-          label: '足球',
-        }, {
-          value: '排球',
-          label: '排球',
-        }],
-
-        addUseDate: '',
-        reason: '',
+        operationDate: '',
+        details: '',
+        operationType: '',
       },
-
-      value: false,
 
       addClassFromData: {
         className: '',
@@ -763,6 +791,15 @@ export default {
         oldClassName: '',
         equipmentName: '',
         className: '',
+        state: false,
+        combination: '',
+        equipments: [
+          {
+            equipment: '',
+            num: 1,
+            className: '',
+          },
+        ],
       },
 
       equipmentQueryFromData: {
@@ -775,40 +812,8 @@ export default {
       },
 
       queryFromData: {
-
         classification: '',
-        classificationOptions: [
-          {
-            value: '武术',
-            label: '武术'
-          },
-          {
-            value: '小球',
-            label: '小球'
-          },
-          {
-            value: '大球',
-            label: '大球'
-          }
-        ],
-
         equipment: '',
-        equipmentOptions: [{
-          value: '乒乓球',
-          label: '乒乓球'
-        }, {
-          value: '羽毛球',
-          label: '羽毛球'
-        }, {
-          value: '篮球',
-          label: '篮球'
-        }, {
-          value: '足球',
-          label: '足球'
-        }, {
-          value: '排球',
-          label: '排球'
-        }],
         picker: [],
         queryStarTime: '',
         queryEndTime: '',
@@ -967,24 +972,7 @@ export default {
         }
       ],
 
-      equipmentTableData: [
-        {
-          equipmentName: '乒乓球',
-          className: '大球',
-        },
-        {
-          equipmentName: '乒乓球',
-          className: '武术',
-        },
-        {
-          equipmentName: '乒乓球',
-          className: '田径',
-        },
-        {
-          equipmentName: '乒乓球',
-          className: '比赛',
-        },
-      ],
+      equipmentTableData: [],
 
       managClassDialogVisible: false,
       managEquipmentDialogVisible: false,
@@ -995,8 +983,26 @@ export default {
       deleteClassDialogVisible: false,
       formLabelWidth: '120px',
 
-      flag: true,
+      removeFlag: false,
       addFlag: false,
+
+      rules: {
+        equipments: [
+          {
+            required: true, message: '请输入供应商名称', trigger: ['blur', 'change']
+          }
+        ],
+        value: [
+          {
+            required: true, message: '请选择器材', trigger: ['blur', 'change']
+          }
+        ],
+        num: [
+          {
+            required: true, message: '请选择数量', trigger: ['blur', 'change']
+          }
+        ],
+      },
 
       modifyClassRules: {
         className: [
@@ -1014,7 +1020,7 @@ export default {
         className: [
           {required: true, message: '请选择分类名称！', trigger: ['change', 'blur']}
         ],
-        equipmentName: [
+        equipment: [
           {required: true, message: '请输入器材名称！', trigger: ['change', 'blur']}
         ]
 
@@ -1030,15 +1036,10 @@ export default {
         className: [
           {required: true, message: '请选择分类名称！', trigger: ['change', 'blur']}
         ],
-        equipmentName: [
+        equipment: [
           {required: true, message: '请输入器材名称！', trigger: ['change', 'blur']}
         ],
-        stockNum: [
-          {required: true, message: '数量不能为空！', trigger: ['change', 'blur']}
-        ],
-
       },
-
 
       userInfo: {},
 
@@ -1086,6 +1087,70 @@ export default {
 
   methods: {
 
+    modifyEquipmentDialogclose() {
+      this.modifyEquipmentFromData.state = false;
+      this.modifyEquipmentDialogVisible = false;
+      this.modifyEquipmentFromData.equipments = [
+        {
+          equipment: '',
+          num: 1,
+          className: '',
+        },
+      ];
+
+    },
+
+    changeInputEvent(val, item) {
+      item.equipment = val;
+      this.$forceUpdate()
+    },
+
+    optionStatus(equipment) {
+
+      for (let j = 0; j < this.equipmentInfo.length; j++) {
+        if (equipment == this.equipmentInfo[j].equipment && this.equipmentInfo[j].combination == 1) {
+          return true;
+        }
+      }
+
+      for (let i = 0; i < this.modifyEquipmentFromData.equipments.length; i++) {
+
+        if (i < 1) {
+          if (equipment == this.modifyEquipmentFromData.oldEquipment) {
+            return true
+          }
+          continue;
+        }
+        if (equipment == this.modifyEquipmentFromData.equipments[i - 1].equipment) {
+          return true
+        }
+      }
+      return false
+    },
+
+    optionAddStatus(equipment) {
+
+      for (let j = 0; j < this.equipmentInfo.length; j++) {
+        if (equipment == this.equipmentInfo[j].equipment && this.equipmentInfo[j].combination == 1) {
+          return true;
+        }
+      }
+
+      for (let i = 0; i < this.addEquipmentFromData.equipments.length; i++) {
+
+        if (i < 1) {
+          if (equipment == this.addEquipmentFromData.oldEquipment) {
+            return true
+          }
+          continue;
+        }
+        if (equipment == this.addEquipmentFromData.equipments[i - 1].equipment) {
+          return true
+        }
+      }
+      return false
+    },
+
     getEquipmentInfo() {
       this.$axios.get("/tb/equipment/info").then(res => {
 
@@ -1093,6 +1158,24 @@ export default {
         this.equipmentInfo = equipments;
 
         this.countEquipment = this.equipmentInfo.length;
+
+        console.log("equipments")
+        console.log(equipments)
+
+        for (let i = 0; i < equipments.length; i++) {
+          this.$set(this.equipmentTableData, i, {
+            className: equipments[i].className,
+            equipment: equipments[i].equipment,
+            combination: equipments[i].combination,
+            equipments: equipments[i].equipments,
+          })
+        }
+
+        for (let i = 0; i < this.equipmentInfo.length; i++) {
+          if (this.equipmentInfo[i].combination == 1) {
+            this.equipmentInfo[i].equipments = JSON.parse(this.equipmentInfo[i].equipments)
+          }
+        }
 
         for (let i = 0; i < this.test.length; i++) {
           this.test[i].options = equipments.filter(item => {
@@ -1176,7 +1259,6 @@ export default {
       }
     },
 
-
     getUserInfo() {
       this.$axios.get("/tb/userInfo").then(res => {
         this.name = res.data.data.name;
@@ -1188,43 +1270,74 @@ export default {
       })
     },
 
-    removeDomain(item) {
+    removeEquipments(item) {
+      if (this.modifyEquipmentFromData.equipments.length > 1) {
+        // 表示先获取这个元素的下标，然后从这个下标开始计算，删除长度为1的元素
+        console.log("item")
+        console.log(item)
+        this.modifyEquipmentFromData.equipments.splice(this.modifyEquipmentFromData.equipments.indexOf(item), 1);
+      }
+      this.flags()
+      this.addFlag = false
+    },
+
+    removeNewEquipments(item) {
       if (this.addEquipmentFromData.equipments.length > 1) {
         // 表示先获取这个元素的下标，然后从这个下标开始计算，删除长度为1的元素
         console.log("item")
         console.log(item)
         this.addEquipmentFromData.equipments.splice(this.addEquipmentFromData.equipments.indexOf(item), 1);
       }
-      this.flags()
+      this.addFlags()
       this.addFlag = false
     },
 
-    addDomain() {
-      let len = this.addEquipmentFromData.equipments.length
-      if (len < this.addEquipmentFromData.equipmentOptions.length) {
-        this.$set(this.addEquipmentFromData.equipments, len, {
+    addEquipments() {
+      let len = this.modifyEquipmentFromData.equipments.length
+      if (len < 10) {
+        this.$set(this.modifyEquipmentFromData.equipments, len, {
           num: 1,
-          // key: Date.now(),
-          value: ''
+          equipment: ''
         })
         this.flags()
       }
-      if ((len + 1) == this.addEquipmentFromData.equipmentOptions.length) {
-
+      if ((len + 1) == 10) {
         this.addFlag = true
       }
+    },
 
+    addNewEquipments() {
+      let len = this.addEquipmentFromData.equipments.length
+      if (len < 10) {
+        this.$set(this.addEquipmentFromData.equipments, len, {
+          num: 1,
+          equipment: ''
+        })
+        this.addFlags()
+      }
+      if ((len + 1) == 10) {
+        this.addFlag = true
+      }
+    },
 
+    addFlags() {
+      if (this.addEquipmentFromData.equipments.length < 2) {
+        this.removeFlag = true
+      } else {
+        //先赋值为true再赋为false, 不然会没反应
+        this.removeFlag = true
+        this.removeFlag = false
+      }
     },
 
     // 判断数组长度
     flags() {
-      if (this.addEquipmentFromData.equipments.length < 2) {
-        this.flag = true
+      if (this.modifyEquipmentFromData.equipments.length < 2) {
+        this.removeFlag = true
       } else {
         //先赋值为true再赋为false, 不然会没反应
-        this.flag = true
-        this.flag = false
+        this.removeFlag = true
+        this.removeFlag = false
       }
     },
 
@@ -1261,24 +1374,51 @@ export default {
       this.$refs.addEquipmentFromData.validate((valid) => {
         if (valid) {
 
-          if (this.value) {
+          for (let i = 0; i < this.equipmentInfo.length; i++) {
+            if (this.addEquipmentFromData.equipment == this.equipmentInfo[i].equipment) {
+              this.$message.error('新增器材名称与已有器材冲突！请更改后重试！');
+              return false
+            }
+          }
+
+          if (this.addEquipmentFromData.state) {
+
+            this.addEquipmentFromData.combination = 1;
             for (let i = 0; i < this.addEquipmentFromData.equipments.length; i++) {
-              let equipmentValue = this.addEquipmentFromData.equipments[i].value
+              let equipmentValue = this.addEquipmentFromData.equipments[i].equipment
               if (!equipmentValue) {
                 this.$message.error('请将信息填完整后重试！');
                 return false
               }
             }
+            for (let i = 0; i < this.addEquipmentFromData.equipments.length; i++) {
+
+              this.addEquipmentFromData.equipments[i].num += "";
+
+              for (let j = 0; j < this.equipmentInfo.length; j++) {
+                if (this.addEquipmentFromData.equipments[i].equipment == this.equipmentInfo[j].equipment) {
+                  console.log("找到了！")
+                  console.log(this.equipmentInfo[j].className)
+                  this.addEquipmentFromData.equipments[i].className = this.equipmentInfo[j].className;
+                }
+              }
+            }
+            this.addEquipmentFromData.newEquipments = JSON.stringify(this.addEquipmentFromData.equipments);
+            this.addEquipmentFromData.equipments = "";
+          } else {
+            this.addEquipmentFromData.equipments = "";
           }
 
-          this.addEquipmentDialogVisible = false
-          console.log("this.addEquipmentFromData")
-          console.log(this.addEquipmentFromData)
-          for (let i = 0; i < this.addEquipmentFromData.equipments.length; i++) {
-            console.log('器材名称: ' + this.addEquipmentFromData.equipments[i].value
-                + '  数量：' + this.addEquipmentFromData.equipments[i].num
-            )
-          }
+          this.$axios.post("/tb/equipment/addEquipment", this.addEquipmentFromData).then(res => {
+            this.$message({
+              type: 'success',
+              message: '添加器材成功!'
+            });
+            this.getEquipmentInfo();
+            this.addEquipmentDialogVisible = false
+
+          })
+
         } else {
           console.log('error submit!!');
           return false;
@@ -1297,11 +1437,11 @@ export default {
       this.$nextTick(function () {
         this.$refs.addEquipmentFromData.resetFields();
       })
-      this.value = false;
 
       this.addEquipmentFromData.equipments = [{
-        value: '',
+        equipment: '',
         num: 1,
+        className: '',
       }]
 
     },
@@ -1319,6 +1459,12 @@ export default {
           cancelButtonText: '取消',
           type: 'warning'
         }).then(() => {
+
+          this.modifyClassFromData.operationDate = this.getCurrentTime();
+          this.modifyClassFromData.operationType = 0;
+          this.modifyClassFromData.username = this.username;
+          this.modifyClassFromData.details = '将分类名称由：“' + this.modifyClassFromData.oldName +
+          '” 修改为： “' + this.modifyClassFromData.className;
 
           this.$axios.post("/tb/classification/revise", this.modifyClassFromData).then(res => {
 
@@ -1344,25 +1490,115 @@ export default {
 
     },
 
-    modifyEquipmentMessageBox() {
-      this.$confirm('此操作将修改器材信息，分类名称由：“' + this.modifyEquipmentFromData.oldClassName +
-          '” 修改为：“' + this.modifyEquipmentFromData.className + '”，' +
-          '器材名称由："' + this.modifyEquipmentFromData.oldEquipmentName +
-          '"修改为："' + this.modifyEquipmentFromData.equipmentName + '"，该操作不可撤回，是否继续?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
-        this.$message({
-          type: 'success',
-          message: '修改成功!'
-        });
-      }).catch(() => {
-        this.$message({
-          type: 'info',
-          message: '已取消修改'
-        });
-      });
+    modifyEquipmentMessageBox(formName) {
+
+      this.$refs.modifyEquipmentFromData.validate((valid) => {
+        if (valid) {
+          let oldModifyEquipmentFromData = JSON.parse(JSON.stringify(this.modifyEquipmentFromData));
+          let mefd = this.modifyEquipmentFromData;
+
+
+          mefd.oldCombination = this.modifyEquipmentFromData.combination;
+
+          if (mefd.state) {
+
+            mefd.combination = 1;
+            for (let i = 0; i < mefd.equipments.length; i++) {
+              if (mefd.equipments[i].equipment == "") {
+                this.$message({
+                  type: 'warning',
+                  message: '请完善信息后重试！'
+                });
+                return;
+              }
+            }
+
+            for (let i = 0; i < mefd.equipments.length; i++) {
+              for (let j = 0; j < this.equipmentInfo.length; j++) {
+                if (mefd.equipments[i].equipment == this.equipmentInfo[j].equipment) {
+                  mefd.equipments[i].className = this.equipmentInfo[j].className;
+                }
+              }
+            }
+
+          } else {
+            mefd.equipments = [];
+            mefd.combination = 0;
+          }
+
+          let equationState = false;
+
+          if (mefd.equipment == mefd.oldEquipment &&
+              mefd.className == mefd.oldClassName &&
+              mefd.combination == mefd.oldCombination) {
+            if (mefd.combination == 1) {
+
+              if (mefd.equipments.length == mefd.oldEquipments.length) {
+                for (let i = 0; i < mefd.equipments.length; i++) {
+                  if (mefd.equipments[i].equipment != mefd.oldEquipments[i].equipment ||
+                      mefd.equipments[i].num != mefd.oldEquipments[i].num) {
+
+                    equationState = true;
+                  }
+                }
+              } else {
+                equationState = true;
+              }
+            }
+
+          } else {
+
+            let equipments = null;
+
+            for (let i = 0; i < this.equipmentInfo.length; i++) {
+              if (this.equipmentInfo[i].combination == 1) {
+                equipments = this.equipmentInfo[i].equipments;
+                for (let j = 0; j < equipments.length; j++) {
+                  if (mefd.oldEquipment == equipments[j].equipment) {
+                    this.$message({
+                      type: 'warning',
+                      message: '该器材被其他器材作为组成器材！不可更改！'
+                    });
+                    return;
+                  }
+                }
+              }
+            }
+            equationState = true;
+          }
+
+          if (equationState) {
+            console.log("有变动")
+
+            for (let i = 0; i < mefd.equipments.length; i++) {
+              mefd.equipments[i].num += ""
+            }
+
+            mefd.oldName = mefd.oldEquipment;
+            mefd.newEquipments = JSON.stringify(mefd.equipments);
+            mefd.equipments = '';
+
+            this.$axios.post("/tb/equipment/updateEquipment", mefd).then(res => {
+
+              this.$message({
+                type: 'success',
+                message: '修改器材成功!'
+              });
+
+              this.getEquipmentInfo();
+              this.modifyEquipmentDialogVisible = false;
+
+            })
+
+          } else {
+            this.modifyEquipmentDialogVisible = false;
+          }
+
+        } else {
+          console.log('error submit!!');
+          return false;
+        }
+      })
     },
 
     delectClass() {
@@ -1383,7 +1619,6 @@ export default {
 
       })
 
-
     },
 
     deleteClassUpdateName(formName) {
@@ -1402,7 +1637,7 @@ export default {
               this.delectClass();
               this.getEquipmentInfo();
               this.deleteClassDialogVisible = false;
-            }else {
+            } else {
               this.$message({
                 type: 'warning',
                 message: '删除失败!'
@@ -1416,7 +1651,6 @@ export default {
         }
       })
     },
-
 
     deleteClassMessageBox(index, row) {
       this.$confirm('此操作将删除名称为：“' + row.className +
@@ -1448,17 +1682,69 @@ export default {
       });
     },
 
+    deleteEquipment(deleteEquipment) {
+
+      let state = true;
+      let count = 0;
+      let equipments = null;
+
+      for (let i = 0; i < this.equipmentInfo.length; i++) {
+        console.log("equipmentInfo.length：" + this.equipmentInfo.length)
+        if (this.equipmentInfo[i].combination == 1) {
+
+          equipments = this.equipmentInfo[i].equipments;
+
+          for (let j = 0; j < equipments.length; j++) {
+
+            if (deleteEquipment == equipments[j].equipment) {
+              this.$message({
+                type: 'warning',
+                message: '该器材被其他器材作为组成器材！请先解除组成后再删除！'
+              });
+              state = false;
+              break;
+            }
+          }
+        }
+      }
+
+      if (state) {
+        console.log("state")
+        this.$axios.delete("/tb/equipment/delete", {
+          // 传递的参数
+          data: {
+            equipment: deleteEquipment,
+          }
+        }).then(res => {
+
+          console.log("运行后端成功！")
+
+          this.$message({
+            type: 'success',
+            message: '删除器材成功!'
+          });
+
+          this.getEquipmentInfo();
+        })
+      }
+
+    },
+
     deleteEquipmentMessageBox(index, row) {
       this.$confirm('此操作将删除“' + row.className +
-          '”分类下，名称为："' + row.equipmentName + '"的器材， 该操作不可撤回，是否继续?', '提示', {
+          '”分类下，名称为："' + row.equipment + '"的器材， 该操作不可撤回，是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        this.$message({
-          type: 'success',
-          message: '删除成功!'
-        });
+
+        console.log("确定删除")
+        this.deleteEquipment(row.equipment);
+        // this.$message({
+        //   type: 'success',
+        //   message: '删除器材成功!'
+        // });
+
       }).catch(() => {
         this.$message({
           type: 'info',
@@ -1477,11 +1763,21 @@ export default {
 
     modifyEquipment(index, row) {
 
-      this.modifyEquipmentFromData.className = row.className;
-      this.modifyEquipmentFromData.equipmentName = row.equipmentName;
-      this.modifyEquipmentFromData.oldClassName = row.className;
-      this.modifyEquipmentFromData.oldEquipmentName = row.equipmentName;
+      console.log("row")
+      console.log(row)
 
+      this.modifyEquipmentFromData.className = row.className;
+      this.modifyEquipmentFromData.equipment = row.equipment;
+      this.modifyEquipmentFromData.oldClassName = row.className;
+      this.modifyEquipmentFromData.oldEquipment = row.equipment;
+      this.modifyEquipmentFromData.combination = row.combination;
+      if (row.combination == 1) {
+        this.modifyEquipmentFromData.state = true;
+        this.modifyEquipmentFromData.equipments = JSON.parse(row.equipments);
+        this.modifyEquipmentFromData.oldEquipments = JSON.parse(row.equipments);
+      }
+
+      this.flags();
       this.modifyEquipmentDialogVisible = true;
     },
 
@@ -1499,10 +1795,6 @@ export default {
       this.$nextTick(function () {
         this.$refs.applyFromData.resetFields();
       })
-    },
-
-    handleChange() {
-
     },
 
     submitApplyForm(formName) {
@@ -1628,6 +1920,39 @@ export default {
       return "text-align:center";
     },
 
+    getEquipmentTableData() {
+      this.$axios.get("/tb/equipment/search", {
+        // 传递的参数
+        params: {
+          className: this.equipmentQueryFromData.className,
+          equipment: this.equipmentQueryFromData.equipmentName,
+        }
+        // 回调函数,一定要使用箭头函数,不然this的指向不是vue示例
+      }).then(res => {
+
+        let equipments = res.data.data.equipments;
+
+        this.equipmentTableData = [];
+        for (let i = 0; i < equipments.length; i++) {
+          this.$set(this.equipmentTableData, i, {
+            className: equipments[i].className,
+            equipment: equipments[i].equipment,
+            combination: equipments[i].combination,
+            equipments: equipments[i].equipments,
+          })
+        }
+      })
+    },
+
+    submitEquipmentQueryForm() {
+      this.getEquipmentTableData();
+    },
+
+    resetEquipmentQueryForm(formName) {
+      this.$refs[formName].resetFields();
+      this.getEquipmentTableData();
+    },
+
     resetQueryForm(formName) {
       this.$refs[formName].resetFields();
       this.classQueryFromData.className = '';
@@ -1645,39 +1970,6 @@ export default {
       })
     }
   },
-
-  computed: {
-    showCityList() {
-      return (val) => {
-        //讲option的显示数据进行深拷贝
-        let newList = JSON.parse(JSON.stringify(this.addEquipmentFromData.equipmentOptions));
-
-        //处理selectList数据，返回一个新数组arr
-        //arr数组就相当于所有Select选中的数据集合（没有选中的为''，不影响判断），只要在这个集合里面，其他的下拉框就不应该有这个选项
-        const arr = this.addEquipmentFromData.equipments.map(item => {
-          //将其格式{value：'NewYork'}变成['NewYork'],方便使用indexOf进行判断
-          return (item = item.value);
-        });
-
-        //过滤出newList里面需要显示的数据
-        newList = newList.filter(item => {
-          //当前下拉框的选中的数据需要显示
-          //val就是当前下拉框选中的值
-          if (val == item.value) {
-            return item;
-          } else {
-            //再判断在arr这个数组中是不是有这个数据，如果不在，说明是需要显示的
-            if (arr.indexOf(item.value) == -1) {
-              return item;
-            }
-          }
-        });
-
-        //返回Options显示数据
-        return newList;
-      };
-    }
-  }
 }
 </script>
 

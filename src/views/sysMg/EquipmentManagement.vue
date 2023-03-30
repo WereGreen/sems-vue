@@ -13,7 +13,7 @@
           <el-select v-model="queryFromData.equipment"
                      filterable
                      clearable
-                     clearable placeholder="请选择器材">
+                     placeholder="请选择器材">
 
             <el-option-group
                 v-for="group in options"

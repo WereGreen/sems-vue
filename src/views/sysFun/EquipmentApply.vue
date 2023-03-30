@@ -769,10 +769,8 @@ export default {
         this.flags()
       }
       if ((len + 1) == 10) {
-
         this.addFlag = true
       }
-
 
     },
 
