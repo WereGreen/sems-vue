@@ -23,7 +23,7 @@
                   range-separator="至"
                   start-placeholder="开始日期"
                   end-placeholder="结束日期"
-                  :picker-options="queryFromData.queryPickerOptions">
+                  :picker-options="queryPickerOptions">
               </el-date-picker>
 
             </el-form-item>
@@ -34,7 +34,7 @@
                   clearable
                   placeholder="请选择操作">
                 <el-option
-                    v-for="item in queryFromData.operationTypeOptions"
+                    v-for="item in operationTypeOptions"
                     :key="item.value"
                     :label="item.label"
                     :value="item.value">
@@ -46,15 +46,15 @@
 
           <div style="display: flex;align-items: center;justify-content: center;">
 
-            <el-form-item label="操作人员" prop="operationName">
+            <el-form-item label="操作人员" prop="username">
               <el-select
-                  v-model="queryFromData.operationName"
+                  v-model="queryFromData.username"
                   clearable
                   style="width: 205px"
                   placeholder="请选择操作人"
               >
                 <el-option
-                    v-for="item in queryFromData.operationNameOptions"
+                    v-for="item in adminOptions"
                     :key="item.value"
                     :label="item.label"
                     :value="item.value">
@@ -62,10 +62,13 @@
               </el-select>
             </el-form-item>
 
-            <el-form-item label="具体操作" prop="specificOperation">
+            <el-form-item label="具体操作" prop="details">
               <el-input
-                  v-model="queryFromData.specificOperation"
+                  v-model="queryFromData.details"
                   placeholder="请输入具体操作"
+                  maxlength="10"
+                  show-word-limit
+                  clearable
               >
 
               </el-input>
@@ -95,27 +98,28 @@
               :default-sort="{prop: 'date', order: 'descending'}"
               style="width: 100%">
             <el-table-column
-                prop="applicationDate"
+                prop="operationDate"
                 label="操作时间"
                 sortable
                 align="center">
             </el-table-column>
 
             <el-table-column
-                prop="name"
+                prop="username"
                 label="操作人员"
+                :formatter="operateName"
                 align="center">
             </el-table-column>
 
             <el-table-column
-                prop="operationStatus"
+                prop="operationType"
                 label="操作类型"
                 :formatter="operationStatus"
                 align="center">
             </el-table-column>
 
             <el-table-column
-                prop="reason"
+                prop="details"
                 align="center"
                 :show-overflow-tooltip="true"
                 label="具体操作">
@@ -130,9 +134,9 @@
               @size-change="handleSizeChange"
               @current-change="handleCurrentChange"
               :current-page="currentPage"
-              :page-sizes="[6, 12, 18, 24]"
+              :hide-on-single-page="tableData.length < 7"
               :page-size="pageSize"
-              layout="total, sizes, prev, pager, next, jumper"
+              layout="total, prev, pager, next, jumper"
               :total="tableData.length">
           </el-pagination>
         </div>
@@ -409,7 +413,6 @@
           </span>
 
         </el-dialog>
-
 
       </div>
 
@@ -811,104 +814,58 @@ export default {
         className: '',
       },
 
+      queryPickerOptions: {
+        disabledDate(time) {
+          return (time.getTime() + 3600 * 1000 * 24 * 30) < Date.now() || time.getTime() > Date.now();
+        },
+        shortcuts: [{
+          text: '最近一周',
+          onClick(picker) {
+            const end = new Date();
+            const start = new Date();
+            start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+            picker.$emit('pick', [start, end]);
+          }
+        }, {
+          text: '最近一个月',
+          onClick(picker) {
+            const end = new Date();
+            const start = new Date();
+            start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+            picker.$emit('pick', [start, end]);
+          }
+        }]
+      },
+
+      operationTypeOptions: [
+        {
+          value: 1,
+          label: '新增'
+        },
+        {
+          value: -1,
+          label: '删除'
+        },
+        {
+          value: 0,
+          label: '修改'
+        },
+      ],
+
       queryFromData: {
-        classification: '',
-        equipment: '',
         picker: [],
         queryStarTime: '',
         queryEndTime: '',
-        queryPickerOptions: {
-          disabledDate(time) {
-            return (time.getTime() + 3600 * 1000 * 24 * 30) < Date.now() || time.getTime() > Date.now();
-          },
-          shortcuts: [{
-            text: '最近一周',
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-              picker.$emit('pick', [start, end]);
-            }
-          }, {
-            text: '最近一个月',
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit('pick', [start, end]);
-            }
-          }]
-        },
-
         operationType: '',
-        operationTypeOptions: [
-          {
-            value: '新增',
-            label: '新增'
-          },
-          {
-            value: '删除',
-            label: '删除'
-          },
-          {
-            value: '修改',
-            label: '修改'
-          },
-        ],
-
-        operationName: '',
-        operationNameOptions: [
-          {
-            value: '王小明',
-            label: '王小明'
-          },
-          {
-            value: '李二蛋',
-            label: '李二蛋'
-          },
-          {
-            value: '赵六哥',
-            label: '赵六哥'
-          },
-        ],
-
-        specificOperation: '',
-
+        username: '',
+        details: '',
       },
 
       applyFromData: {
         name: '',
         equipment: '',
-        equipmentOptions: [{
-          value: '乒乓球',
-          label: '乒乓球'
-        }, {
-          value: '羽毛球',
-          label: '羽毛球'
-        }, {
-          value: '篮球',
-          label: '篮球'
-        }, {
-          value: '足球',
-          label: '足球'
-        }, {
-          value: '排球',
-          label: '排球'
-        }],
         num: 1,
         warehouse: '',
-        warehouseOptions: [
-          {
-            value: '仓库1',
-            label: '仓库1'
-          }, {
-            value: '仓库2',
-            label: '仓库2'
-          }, {
-            value: '仓库3',
-            label: '仓库3'
-          }
-        ],
         applyTime: '',
         applyReason: '',
       },
@@ -916,55 +873,7 @@ export default {
       currentPage: 1,
       pageSize: 6,
 
-      tableData: [{
-        applicationDate: '2023-2-8 08:49',
-        name: 'xxx',
-        reason: '现数量不能满足教学需求',
-        operationStatus: 0,
-      },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '弥补报废后差异',
-          operationStatus: 1,
-
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '现数量不能满足教学需求现数量不能满足教学需求现数量不能满足教学需求现数量不能满足教学需求现数量不能满足教学需求',
-          operationStatus: -1,
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '现数量不能满足教学需求',
-          operationStatus: 1,
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '现数量不能满足教学需求',
-          operationStatus: 0
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '现数量不能满足教学需求',
-          operationStatus: 0
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '现数量不能满足教学需求',
-          operationStatus: -1
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '现数量不能满足教学需求',
-          operationStatus: -1
-        },],
+      tableData: [],
 
       classTableData: [
         {
@@ -1075,17 +984,63 @@ export default {
       username: '',
       deleteClassName: '',
 
+      adminOptions: [],
     }
+
   },
   created() {
 
     this.getUserInfo();
     this.getClassInfo();
     this.getEquipmentInfo();
+    this.getAdminInfo();
+    this.getOperationInfo();
 
   },
 
   methods: {
+
+    getOperationInfo() {
+      this.$axios.get("/tb/operate/info", {
+        // 传递的参数
+        params: {
+          operationClass: 0,
+        }
+        // 回调函数,一定要使用箭头函数,不然this的指向不是vue示例
+      }).then(res => {
+
+        let operateList = res.data.data.operateList;
+
+        console.log("+++++++++++")
+        console.log(operateList)
+
+        this.tableData = [];
+        for (let i = 0; i < operateList.length; i++) {
+          this.$set(this.tableData, i, {
+            username: operateList[i].username,
+            operationType: operateList[i].operationType,
+            details: operateList[i].details,
+            operationDate: operateList[i].operationDate,
+          })
+        }
+      })
+    },
+
+    getAdminInfo() {
+      this.$axios.get("/tb/user/admin").then(res => {
+
+        let adminList = res.data.data.adminList;
+        console.log(adminList)
+
+        for (let i = 0; i < adminList.length; i++) {
+
+          this.$set(this.adminOptions, i, {
+            label: adminList[i].name,
+            value: adminList[i].username,
+          })
+        }
+      })
+    },
 
     modifyEquipmentDialogclose() {
       this.modifyEquipmentFromData.state = false;
@@ -1219,40 +1174,10 @@ export default {
       })
     },
 
-    submitAddForm(formName) {
-      this.$refs.addEquipmentFromData.validate((valid) => {
-        if (valid) {
-
-          for (let i = 0; i < this.addEquipmentFromData.equipments.length; i++) {
-            let equipmentValue = this.addEquipmentFromData.equipments[i].value
-            if (!equipmentValue) {
-              this.$message.error('请将信息填完整后重试！');
-              return false
-            }
-          }
-
-          this.dialogFormVisible = false
-          console.log("this.addEquipmentFromData数据")
-          console.log(this.addEquipmentFromData)
-          for (let i = 0; i < this.addEquipmentFromData.equipments.length; i++) {
-            console.log('器材名称: ' + this.addEquipmentFromData.equipments[i].value
-                + '  数量：' + this.addEquipmentFromData.equipments[i].num
-            )
-          }
-          console.log('仓库: ' + this.addEquipmentFromData.warehouse
-              + '\n日期: ' + this.addEquipmentFromData.picker
-              + '\n原因: ' + this.addEquipmentFromData.reason)
-        } else {
-          console.log('error submit!!');
-          return false;
-        }
-      });
-    },
-
     operationStatus(row, column) {
-      if (row.operationStatus === 0) {
+      if (row.operationType === 0) {
         return '修改'
-      } else if (row.operationStatus === 1) {
+      } else if (row.operationType === 1) {
         return '添加'
       } else {
         return '删除'
@@ -1353,9 +1278,16 @@ export default {
       this.$refs.addClassFromData.validate((valid) => {
         if (valid) {
 
+          this.addClassFromData.operationDate = this.getCurrentTime();
+          this.addClassFromData.operationType = 1;
+          this.addClassFromData.operationClass = 0;
+          this.addClassFromData.username = this.username;
+          this.addClassFromData.details = "添加分类：" + this.addClassFromData.className;
+
           this.$axios.post("/tb/classification/addClass", this.addClassFromData).then(res => {
 
             this.getClassInfo();
+            this.getOperationInfo();
             this.$message({
               type: 'success',
               message: '添加成功!'
@@ -1409,12 +1341,19 @@ export default {
             this.addEquipmentFromData.equipments = "";
           }
 
+          this.addEquipmentFromData.operationDate = this.getCurrentTime();
+          this.addEquipmentFromData.operationType = 1;
+          this.addEquipmentFromData.operationClass = 0;
+          this.addEquipmentFromData.username = this.username;
+          this.addEquipmentFromData.details = "添加器材：" + this.addEquipmentFromData.equipment;
+
           this.$axios.post("/tb/equipment/addEquipment", this.addEquipmentFromData).then(res => {
             this.$message({
               type: 'success',
               message: '添加器材成功!'
             });
             this.getEquipmentInfo();
+            this.getOperationInfo();
             this.addEquipmentDialogVisible = false
 
           })
@@ -1462,13 +1401,15 @@ export default {
 
           this.modifyClassFromData.operationDate = this.getCurrentTime();
           this.modifyClassFromData.operationType = 0;
+          this.modifyClassFromData.operationClass = 0;
           this.modifyClassFromData.username = this.username;
           this.modifyClassFromData.details = '将分类名称由：“' + this.modifyClassFromData.oldName +
-          '” 修改为： “' + this.modifyClassFromData.className;
+              '” 修改为： “' + this.modifyClassFromData.className;
 
           this.$axios.post("/tb/classification/revise", this.modifyClassFromData).then(res => {
 
             this.getClassInfo();
+            this.getOperationInfo();
             this.$message({
               type: 'success',
               message: '修改成功!'
@@ -1490,115 +1431,180 @@ export default {
 
     },
 
+    operateName(row, column) {
+      for (let i = 0; i < this.adminOptions.length; i++) {
+        if (row.username == this.adminOptions[i].value) {
+          return this.adminOptions[i].label;
+          break;
+        }
+      }
+    },
+
     modifyEquipmentMessageBox(formName) {
 
       this.$refs.modifyEquipmentFromData.validate((valid) => {
-        if (valid) {
-          let oldModifyEquipmentFromData = JSON.parse(JSON.stringify(this.modifyEquipmentFromData));
-          let mefd = this.modifyEquipmentFromData;
+            if (valid) {
+              let oldModifyEquipmentFromData = JSON.parse(JSON.stringify(this.modifyEquipmentFromData));
+              let mefd = this.modifyEquipmentFromData;
 
 
-          mefd.oldCombination = this.modifyEquipmentFromData.combination;
+              mefd.oldCombination = this.modifyEquipmentFromData.combination;
 
-          if (mefd.state) {
+              if (mefd.state) {
 
-            mefd.combination = 1;
-            for (let i = 0; i < mefd.equipments.length; i++) {
-              if (mefd.equipments[i].equipment == "") {
-                this.$message({
-                  type: 'warning',
-                  message: '请完善信息后重试！'
-                });
-                return;
-              }
-            }
-
-            for (let i = 0; i < mefd.equipments.length; i++) {
-              for (let j = 0; j < this.equipmentInfo.length; j++) {
-                if (mefd.equipments[i].equipment == this.equipmentInfo[j].equipment) {
-                  mefd.equipments[i].className = this.equipmentInfo[j].className;
-                }
-              }
-            }
-
-          } else {
-            mefd.equipments = [];
-            mefd.combination = 0;
-          }
-
-          let equationState = false;
-
-          if (mefd.equipment == mefd.oldEquipment &&
-              mefd.className == mefd.oldClassName &&
-              mefd.combination == mefd.oldCombination) {
-            if (mefd.combination == 1) {
-
-              if (mefd.equipments.length == mefd.oldEquipments.length) {
+                mefd.combination = 1;
                 for (let i = 0; i < mefd.equipments.length; i++) {
-                  if (mefd.equipments[i].equipment != mefd.oldEquipments[i].equipment ||
-                      mefd.equipments[i].num != mefd.oldEquipments[i].num) {
-
-                    equationState = true;
-                  }
-                }
-              } else {
-                equationState = true;
-              }
-            }
-
-          } else {
-
-            let equipments = null;
-
-            for (let i = 0; i < this.equipmentInfo.length; i++) {
-              if (this.equipmentInfo[i].combination == 1) {
-                equipments = this.equipmentInfo[i].equipments;
-                for (let j = 0; j < equipments.length; j++) {
-                  if (mefd.oldEquipment == equipments[j].equipment) {
+                  if (mefd.equipments[i].equipment == "") {
                     this.$message({
                       type: 'warning',
-                      message: '该器材被其他器材作为组成器材！不可更改！'
+                      message: '请完善信息后重试！'
                     });
                     return;
                   }
                 }
+
+                for (let i = 0; i < mefd.equipments.length; i++) {
+                  for (let j = 0; j < this.equipmentInfo.length; j++) {
+                    if (mefd.equipments[i].equipment == this.equipmentInfo[j].equipment) {
+                      mefd.equipments[i].className = this.equipmentInfo[j].className;
+                    }
+                  }
+                }
+
+              } else {
+                mefd.equipments = [];
+                mefd.combination = 0;
               }
+
+              let equationState = false;
+
+              if (mefd.equipment == mefd.oldEquipment &&
+                  mefd.className == mefd.oldClassName &&
+                  mefd.combination == mefd.oldCombination) {
+                if (mefd.combination == 1) {
+
+                  if (mefd.equipments.length == mefd.oldEquipments.length) {
+                    for (let i = 0; i < mefd.equipments.length; i++) {
+                      if (mefd.equipments[i].equipment != mefd.oldEquipments[i].equipment ||
+                          mefd.equipments[i].num != mefd.oldEquipments[i].num) {
+
+                        equationState = true;
+                      }
+                    }
+                  } else {
+                    equationState = true;
+                  }
+                }
+
+              } else {
+
+                let equipments = null;
+
+                for (let i = 0; i < this.equipmentInfo.length; i++) {
+                  if (this.equipmentInfo[i].combination == 1) {
+                    equipments = this.equipmentInfo[i].equipments;
+                    for (let j = 0; j < equipments.length; j++) {
+                      if (mefd.oldEquipment == equipments[j].equipment) {
+                        this.$message({
+                          type: 'warning',
+                          message: '该器材被其他器材作为组成器材！不可更改！'
+                        });
+                        return;
+                      }
+                    }
+                  }
+                }
+                equationState = true;
+              }
+
+              if (equationState) {
+                console.log("有变动")
+
+                for (let i = 0; i < mefd.equipments.length; i++) {
+                  mefd.equipments[i].num += ""
+                }
+
+                mefd.oldName = mefd.oldEquipment;
+
+                mefd.operationDate = this.getCurrentTime();
+                mefd.operationType = 0;
+                mefd.username = this.username;
+                mefd.operationClass = 0;
+                mefd.details = "";
+
+                if (mefd.equipment != mefd.oldEquipment) {
+                  mefd.details += " 将器材名称由： " + mefd.oldEquipment + " 修改为： " + mefd.equipment;
+                }
+                if (mefd.className != mefd.oldClassName) {
+                  mefd.details += " 将器材分类由： " + mefd.oldClassName + " 修改为： " + mefd.className;
+                }
+                if (mefd.combination != mefd.oldCombination) {
+                  if (mefd.combination == 0) {
+                    mefd.details += " 将器材由组合器材修改为非组合器材";
+                  } else {
+                    mefd.details += " 将器材由非组合器材修改为组合器材 ";
+
+                    for (let i = 0; i < mefd.equipments.length; i++) {
+                      mefd.details += (i + 1) + ".器材名称：" + mefd.equipments[i].equipment + ", 数量： " + mefd.equipments[i].num + " ";
+                    }
+
+                  }
+                }
+
+                if (mefd.combination == mefd.oldCombination && mefd.combination == 1) {
+
+                  let state = false;
+
+                  console.log("==============")
+                  console.log(mefd.oldEquipments.length)
+                  console.log(mefd.oldEquipments)
+
+                  if (mefd.equipments.length == mefd.oldEquipments.length) {
+                    for (let i = 0; i < mefd.equipments.length; i++) {
+                      if (mefd.equipments[i].equipment != mefd.oldEquipments[i].equipment
+                          || mefd.equipments[i].num != mefd.oldEquipments[i].num) {
+                        state = true;
+                      }
+                    }
+                  } else {
+                    state = true;
+                  }
+
+                  if (state) {
+                    mefd.details += "器材组合修改为："
+                    for (let i = 0; i < mefd.equipments.length; i++) {
+                      mefd.details += (i + 1) + ".器材名称：" + mefd.equipments[i].equipment + ", 数量： " + mefd.equipments[i].num + " ";
+                    }
+                  }
+
+                }
+
+                mefd.newEquipments = JSON.stringify(mefd.equipments);
+                mefd.equipments = '';
+
+                this.$axios.post("/tb/equipment/updateEquipment", mefd).then(res => {
+
+                  this.$message({
+                    type: 'success',
+                    message: '修改器材成功!'
+                  });
+
+                  this.getEquipmentInfo();
+                  this.getOperationInfo();
+                  this.modifyEquipmentDialogVisible = false;
+
+                })
+
+              } else {
+                this.modifyEquipmentDialogVisible = false;
+              }
+
+            } else {
+              console.log('error submit!!');
+              return false;
             }
-            equationState = true;
           }
-
-          if (equationState) {
-            console.log("有变动")
-
-            for (let i = 0; i < mefd.equipments.length; i++) {
-              mefd.equipments[i].num += ""
-            }
-
-            mefd.oldName = mefd.oldEquipment;
-            mefd.newEquipments = JSON.stringify(mefd.equipments);
-            mefd.equipments = '';
-
-            this.$axios.post("/tb/equipment/updateEquipment", mefd).then(res => {
-
-              this.$message({
-                type: 'success',
-                message: '修改器材成功!'
-              });
-
-              this.getEquipmentInfo();
-              this.modifyEquipmentDialogVisible = false;
-
-            })
-
-          } else {
-            this.modifyEquipmentDialogVisible = false;
-          }
-
-        } else {
-          console.log('error submit!!');
-          return false;
-        }
-      })
+      )
     },
 
     delectClass() {
@@ -1607,6 +1613,12 @@ export default {
         // 传递的参数
         data: {
           className: this.deleteClassName,
+          operationDate: this.getCurrentTime(),
+          operationType: -1,
+          operationClass: 0,
+          username: this.username,
+          details: "删除了分类：" + this.deleteClassName,
+
         }
       }).then(res => {
 
@@ -1616,6 +1628,7 @@ export default {
         });
 
         this.getClassInfo();
+        this.getOperationInfo();
 
       })
 
@@ -1626,6 +1639,14 @@ export default {
         if (valid) {
 
           let updateState = false;
+
+          this.updateEquipmentClassFromData.operationDate = this.getCurrentTime();
+          this.updateEquipmentClassFromData.operationType = 0;
+          this.updateEquipmentClassFromData.username = this.username;
+          this.updateEquipmentClassFromData.operationClass = 0;
+          this.updateEquipmentClassFromData.details = "因删除分类，将该分类下的所有器材分类由：" + this.updateEquipmentClassFromData.oldName
+              + " 修改为：" + this.updateEquipmentClassFromData.className;
+
           this.$axios.post("/tb/equipment/update", this.updateEquipmentClassFromData).then(res => {
 
             updateState = true;
@@ -1636,6 +1657,7 @@ export default {
             if (updateState) {
               this.delectClass();
               this.getEquipmentInfo();
+              this.getOperationInfo();
               this.deleteClassDialogVisible = false;
             } else {
               this.$message({
@@ -1650,7 +1672,8 @@ export default {
           return false;
         }
       })
-    },
+    }
+    ,
 
     deleteClassMessageBox(index, row) {
       this.$confirm('此操作将删除名称为：“' + row.className +
@@ -1680,7 +1703,8 @@ export default {
           message: '已取消删除'
         });
       });
-    },
+    }
+    ,
 
     deleteEquipment(deleteEquipment) {
 
@@ -1714,10 +1738,13 @@ export default {
           // 传递的参数
           data: {
             equipment: deleteEquipment,
+            operationDate: this.getCurrentTime(),
+            operationType: -1,
+            operationClass: 0,
+            username: this.username,
+            details: "删除了器材：" + deleteEquipment,
           }
         }).then(res => {
-
-          console.log("运行后端成功！")
 
           this.$message({
             type: 'success',
@@ -1725,10 +1752,12 @@ export default {
           });
 
           this.getEquipmentInfo();
+          this.getOperationInfo();
         })
       }
 
-    },
+    }
+    ,
 
     deleteEquipmentMessageBox(index, row) {
       this.$confirm('此操作将删除“' + row.className +
@@ -1740,10 +1769,7 @@ export default {
 
         console.log("确定删除")
         this.deleteEquipment(row.equipment);
-        // this.$message({
-        //   type: 'success',
-        //   message: '删除器材成功!'
-        // });
+
 
       }).catch(() => {
         this.$message({
@@ -1751,7 +1777,8 @@ export default {
           message: '已取消删除'
         });
       });
-    },
+    }
+    ,
 
     modifyClass(index, row) {
 
@@ -1759,7 +1786,8 @@ export default {
       this.modifyClassFromData.className = row.className;
 
       this.modifyClassDialogVisible = true;
-    },
+    }
+    ,
 
     modifyEquipment(index, row) {
 
@@ -1779,45 +1807,28 @@ export default {
 
       this.flags();
       this.modifyEquipmentDialogVisible = true;
-    },
+    }
+    ,
 
     managClass() {
       this.managClassDialogVisible = true;
       console.log("管理分类")
-    },
+    }
+    ,
 
     managEquipment() {
       this.managEquipmentDialogVisible = true;
       console.log("管理器材")
-    },
+    }
+    ,
 
     addApplyDialogclose() {
       this.$nextTick(function () {
         this.$refs.applyFromData.resetFields();
       })
-    },
+    }
+    ,
 
-    submitApplyForm(formName) {
-      this.$refs.applyFromData.validate((valid) => {
-        if (valid) {
-          this.addScrapDialogVisible = false;
-
-          console.log("applyFromData数据")
-          console.log(this.applyFromData)
-          console.log('器材名称: ' + this.applyFromData.equipment
-              + '\n申请数量：' + this.applyFromData.num
-              + '\n存放仓库: ' + this.applyFromData.warehouse
-              + '\n申请时间: ' + this.getCurrentTime()
-              + '\n申请人: ' + this.userInfo.username
-              + '\n原因: ' + this.applyFromData.applyReason
-          )
-
-        } else {
-          console.log('error submit!!');
-          return false;
-        }
-      });
-    },
 
     submitClassQueryForm(formName) {
       this.$refs[formName].validate((valid) => {
@@ -1833,9 +1844,6 @@ export default {
             let classifications = res.data.data.classifications;
             this.classTableData = []
 
-            console.log("1111111111111")
-            console.log(classifications)
-
             if (classifications) {
               for (let i = 0; i < classifications.length; i++) {
                 this.$set(this.classTableData, i, {
@@ -1850,31 +1858,60 @@ export default {
           return false;
         }
       });
-    },
+    }
+    ,
 
     submitQueryForm(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
 
-          let starDate = this.$moment(this.queryFromData.picker[0]).format('YYYY-MM-DD')
-          let endDate = this.$moment(this.queryFromData.picker[1]).format('YYYY-MM-DD')
+          if (this.queryFromData.picker.length != 0) {
+            let starDate = this.$moment(this.queryFromData.picker[0]).format('YYYY-MM-DD HH:mm')
+            let endDate = this.$moment(this.queryFromData.picker[1]).format('YYYY-MM-DD HH:mm')
 
-          this.queryFromData.queryStarTime = starDate
-          this.queryFromData.queryEndTime = endDate
-          console.log("this.queryFromData数据")
-          console.log('器材名称: ' + this.queryFromData.equipment
-              + '\n仓库: ' + this.queryFromData.warehouse
-              + '\n日期: ' + '开始时间：' + this.queryFromData.queryStarTime
-              + '结束时间：' + this.queryFromData.queryEndTime
-              + '\n原因: ' + this.queryFromData.reason
-              + '\n状态: ' + this.queryFromData.operationStatus
-              + '\n审核人员: ' + this.queryFromData.auditor)
+            this.queryFromData.queryStarTime = starDate
+            this.queryFromData.queryEndTime = endDate
+          } else {
+            this.queryFromData.queryStarTime = null;
+            this.queryFromData.queryEndTime = null;
+          }
+
+          console.log("=============")
+          console.log(this.queryFromData.username)
+
+          this.$axios.get("/tb/operate/search", {
+            // 传递的参数
+            params: {
+              username: this.queryFromData.username,
+              operationClass: 0,
+              operationType: this.queryFromData.operationType,
+              queryStarTime: this.queryFromData.queryStarTime,
+              queryEndTime: this.queryFromData.queryEndTime,
+              details: this.queryFromData.details,
+            }
+            // 回调函数,一定要使用箭头函数,不然this的指向不是vue示例
+          }).then(res => {
+
+            let operateList = res.data.data.operateList;
+
+            this.tableData = [];
+            for (let i = 0; i < operateList.length; i++) {
+              this.$set(this.tableData, i, {
+                username: operateList[i].username,
+                operationType: operateList[i].operationType,
+                details: operateList[i].details,
+                operationDate: operateList[i].operationDate,
+              })
+            }
+          })
+
         } else {
           console.log('error submit!!');
           return false;
         }
       });
-    },
+    }
+    ,
 
     getCurrentTime() {
       let yy = new Date().getFullYear();
@@ -1889,36 +1926,40 @@ export default {
 
     tableRowClassName({row, rowIndex}) {
 
-      if (row.operationStatus == -1) {
+      if (row.operationType == -1) {
         return 'warning-row';
-      } else if (row.operationStatus == 0) {
+      } else if (row.operationType == 0) {
         return 'conduct-row';
       }
       return 'success-row';
     },
 
-    //比较两个日期大小。格式：2018-8-12 12:30
+//比较两个日期大小。格式：2018-8-12 12:30
     compareDate(d1, d2) {
       let date1 = new Date(Date.parse(d1))
       let date2 = new Date(Date.parse(d2))
       return date1 > date2
-    },
+    }
+    ,
 
     handleSizeChange(val) {
       this.pageSize = val
       this.currentPage = 1
       console.log(`每页 ${val} 条`);
-    },
+    }
+    ,
 
     handleCurrentChange(val) {
       this.currentPage = val
       console.log(`当前页: ${val}`);
-    },
+    }
+    ,
 
     rowStyle({row, column, rowIndex, columnIndex}) {
 
       return "text-align:center";
-    },
+    }
+    ,
 
     getEquipmentTableData() {
       this.$axios.get("/tb/equipment/search", {
@@ -1942,33 +1983,24 @@ export default {
           })
         }
       })
-    },
+    }
+    ,
 
     submitEquipmentQueryForm() {
       this.getEquipmentTableData();
-    },
+    }
+    ,
 
     resetEquipmentQueryForm(formName) {
       this.$refs[formName].resetFields();
       this.getEquipmentTableData();
-    },
+    }
+    ,
 
     resetQueryForm(formName) {
       this.$refs[formName].resetFields();
-      this.classQueryFromData.className = '';
-      this.$axios.get("/tb/classification/info").then(res => {
-
-        let classifications = res.data.data.classifications;
-
-        this.classTableData = []
-
-        for (let i = 0; i < classifications.length; i++) {
-          this.$set(this.classTableData, i, {
-            className: classifications[i].className,
-          })
-        }
-      })
-    }
+      this.getOperationInfo();
+    },
   },
 }
 </script>

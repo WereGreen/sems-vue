@@ -23,7 +23,7 @@
                   range-separator="至"
                   start-placeholder="开始日期"
                   end-placeholder="结束日期"
-                  :picker-options="queryFromData.queryPickerOptions">
+                  :picker-options="queryPickerOptions">
               </el-date-picker>
 
             </el-form-item>
@@ -34,7 +34,7 @@
                   clearable
                   placeholder="请选择操作">
                 <el-option
-                    v-for="item in queryFromData.operationTypeOptions"
+                    v-for="item in operationTypeOptions"
                     :key="item.value"
                     :label="item.label"
                     :value="item.value">
@@ -46,15 +46,15 @@
 
           <div style="display: flex;align-items: center;justify-content: center;">
 
-            <el-form-item label="操作人员" prop="operationName">
+            <el-form-item label="操作人员" prop="username">
               <el-select
-                  v-model="queryFromData.operationName"
+                  v-model="queryFromData.username"
                   clearable
                   style="width: 205px"
                   placeholder="请选择操作人"
               >
                 <el-option
-                    v-for="item in queryFromData.operationNameOptions"
+                    v-for="item in adminOptions"
                     :key="item.value"
                     :label="item.label"
                     :value="item.value">
@@ -62,10 +62,13 @@
               </el-select>
             </el-form-item>
 
-            <el-form-item label="具体操作" prop="specificOperation">
+            <el-form-item label="具体操作" prop="details">
               <el-input
-                  v-model="queryFromData.specificOperation"
+                  v-model="queryFromData.details"
                   placeholder="请输入具体操作"
+                  maxlength="10"
+                  show-word-limit
+                  clearable
               >
 
               </el-input>
@@ -81,7 +84,6 @@
         </el-form>
 
 
-
       </div>
 
 
@@ -92,31 +94,32 @@
           <el-table
               :data="tableData.slice((currentPage-1)*pageSize,currentPage*pageSize)"
               :cell-style="rowStyle"
-              :row-class-name="tableRowwarehouseName"
+              :row-class-name="tableRowClassName"
               :default-sort="{prop: 'date', order: 'descending'}"
               style="width: 100%">
             <el-table-column
-                prop="applicationDate"
+                prop="operationDate"
                 label="操作时间"
                 sortable
                 align="center">
             </el-table-column>
 
             <el-table-column
-                prop="name"
+                prop="username"
                 label="操作人员"
+                :formatter="operateName"
                 align="center">
             </el-table-column>
 
             <el-table-column
-                prop="operationStatus"
+                prop="operationType"
                 label="操作类型"
                 :formatter="operationStatus"
                 align="center">
             </el-table-column>
 
             <el-table-column
-                prop="reason"
+                prop="details"
                 align="center"
                 :show-overflow-tooltip="true"
                 label="具体操作">
@@ -131,9 +134,9 @@
               @size-change="handleSizeChange"
               @current-change="handleCurrentChange"
               :current-page="currentPage"
-              :page-sizes="[6, 12, 18, 24]"
+              :hide-on-single-page="tableData.length < 7"
               :page-size="pageSize"
-              layout="total, sizes, prev, pager, next, jumper"
+              layout="total, prev, pager, next, jumper"
               :total="tableData.length">
           </el-pagination>
         </div>
@@ -155,11 +158,11 @@
               现共有仓库
             </div>
             <div style="color: #409EFF;font-size: 80px;
-            text-align: center;line-height: 120px;width: 165px;margin-left: -20px">
-              {{countWarehouse}}
+            text-align: center;line-height: 120px;width: 165px;margin-left: -20px;font-weight: bold;">
+              {{ countWarehouse }}
             </div>
             <div style="font-size: 18px;color: #909399;float: right">
-              种
+              个
             </div>
           </el-card>
         </div>
@@ -168,11 +171,11 @@
         <div>
           <el-card shadow="always" class="dataCard">
             <div style="font-size: 18px;color: #606266">
-              现共有器材
+              现有器材总量
             </div>
-            <div style="color: #67C23A;font-size: 80px;
-            text-align: center;line-height: 120px;width: 165px;margin-left: -20px">
-              {{countEquipments}}
+            <div style="color: #67C23A;font-size: 45px;
+            text-align: center;line-height: 120px;width: 165px;margin-left: -20px;font-weight: bold;">
+              {{ countEquipments }}
             </div>
             <div style="font-size: 18px;color: #909399;float: right">
               份
@@ -222,26 +225,26 @@
         <el-dialog
             title="仓库管理"
             :visible.sync="managClassDialogVisible"
-            width="32%"
+            width="40%"
             @close="managClassdialogclose()"
             center>
 
 
           <el-form :inline="true"
-                   :model="classQueryFromData"
+                   :model="warehouseQueryFromData"
                    class="demo-form-inline"
-                   style="margin-left: 15px;"
+                   style="margin-left: 85px;"
                    size="medium"
                    ref="classQueryFromData">
 
-            <el-form-item label="仓库名称" prop="classification">
+            <el-form-item label="仓库名称" prop="warehouse">
               <el-select
-                  v-model="classQueryFromData.classification"
+                  v-model="warehouseQueryFromData.warehouse"
                   clearable
                   style="width: 170px"
                   placeholder="请选择仓库">
                 <el-option
-                    v-for="item in classQueryFromData.classificationOptions"
+                    v-for="item in warehouseOptions"
                     :key="item.value"
                     :label="item.label"
                     :value="item.value">
@@ -250,22 +253,28 @@
             </el-form-item>
 
             <el-form-item>
-              <el-button type="primary" @click="submitQueryForm('classQueryFromData')">查询</el-button>
+              <el-button type="primary" @click="submitWarehouseQueryForm('warehouseQueryFromData')">查询</el-button>
             </el-form-item>
             <el-form-item>
-              <el-button @click="resetQueryForm('classQueryFromData')">重置</el-button>
+              <el-button @click="resetWarehouseQueryForm()">重置</el-button>
             </el-form-item>
           </el-form>
 
 
           <el-table
-              :data="ClassTableData"
+              :data="WarehouseTableData"
               stripe
               height="250"
               style="width: 100%">
             <el-table-column
-                prop="warehouseName"
+                prop="warehouse"
                 label="仓库名称"
+                align="center"
+            >
+            </el-table-column>
+            <el-table-column
+                prop="address"
+                label="仓库地址"
                 align="center"
             >
             </el-table-column>
@@ -279,13 +288,13 @@
                 <el-button type="primary"
                            size="mini"
                            plain round
-                           @click="modifyClass(scope.$index, scope.row)">修改
+                           @click="modifyWarehouse(scope.$index, scope.row)">修改
                 </el-button>
 
                 <el-button type="danger"
                            size="mini"
                            plain round
-                           @click="deleteClassMessageBox(scope.$index, scope.row)">删除
+                           @click="deleteWarehouseMessageBox(scope.$index, scope.row)">删除
                 </el-button>
 
               </template>
@@ -309,22 +318,29 @@
 
         <el-dialog
             title="修改仓库"
-            :visible.sync="modifyClassDialogVisible"
-            width="30%"
+            :visible.sync="modifyWarehouseDialogVisible"
+            width="25%"
             center>
 
           <el-form :inline="true"
-                   :model="modifyClassFromData"
+                   :model="modifyWarehouseFromData"
                    class="demo-form-inline"
                    size="medium"
-                   :rules="modifyClassRules"
-                   style="display: flex;align-items: center;justify-content: center;"
-                   ref="modifyClassFromData">
+                   :rules="modifyWarehouseRules"
+                   ref="modifyWarehouseFromData">
 
-            <el-form-item label="仓库名称" prop="modifywarehouseName">
+            <el-form-item label="仓库名称" prop="warehouse">
               <el-input
                   placeholder="请输入修改后的仓库名称"
-                  v-model="modifyClassFromData.modifywarehouseName"
+                  v-model="modifyWarehouseFromData.warehouse"
+                  clearable>
+              </el-input>
+            </el-form-item>
+
+            <el-form-item label="仓库地址" prop="address">
+              <el-input
+                  placeholder="请输入修改后的仓库地址"
+                  v-model="modifyWarehouseFromData.address"
                   clearable>
               </el-input>
             </el-form-item>
@@ -333,8 +349,8 @@
 
 
           <span slot="footer" class="dialog-footer">
-            <el-button @click="modifyClassDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="modifyClassMessageBox">确 定</el-button>
+            <el-button @click="modifyWarehouseDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="modifyWarehouseMessageBox">确 定</el-button>
           </span>
 
         </el-dialog>
@@ -344,23 +360,30 @@
 
         <el-dialog
             title="新增仓库"
-            :visible.sync="addClassDialogVisible"
-            width="30%"
-            @close="addClassdialogclose()"
+            :visible.sync="addWarehouseDialogVisible"
+            width="25%"
+            @close="addWarehousedialogclose()"
             center>
 
           <el-form :inline="true"
-                   :model="addClassFromData"
+                   :model="addWarehouseFromData"
                    class="demo-form-inline"
                    size="medium"
-                   :rules="addClassRules"
-                   style="display: flex;align-items: center;justify-content: center;"
-                   ref="addClassFromData">
+                   :rules="addWarehouseRules"
+                   ref="addWarehouseFromData">
 
-            <el-form-item label="仓库名称" prop="addwarehouseName">
+            <el-form-item label="仓库名称" prop="warehouse">
               <el-input
                   placeholder="请输入新增的仓库名称"
-                  v-model="addClassFromData.addwarehouseName"
+                  v-model="addWarehouseFromData.warehouse"
+                  clearable>
+              </el-input>
+            </el-form-item>
+
+            <el-form-item label="仓库地址" prop="address">
+              <el-input
+                  placeholder="请输入新增的仓库名称"
+                  v-model="addWarehouseFromData.address"
                   clearable>
               </el-input>
             </el-form-item>
@@ -368,8 +391,49 @@
           </el-form>
 
           <span slot="footer" class="dialog-footer">
-            <el-button @click="addClassDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="submitAddClassFromData(addClassFromData)">确 定</el-button>
+            <el-button @click="addWarehouseDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="submitAddWarehouseFromData()">确 定</el-button>
+          </span>
+
+        </el-dialog>
+
+        <!--    删除仓库    -->
+
+        <el-dialog
+            title="请为该仓库下库存选择新的仓库"
+            :visible.sync="deleteWarehouseDialogVisible"
+            width="30%"
+            center>
+
+          <el-form :inline="true"
+                   :model="updateStockWarehouseFromData"
+                   class="demo-form-inline"
+                   size="medium"
+                   style="display: flex;align-items: center;justify-content: center;"
+                   ref="updateStockWarehouseRules">
+
+            <el-form-item label="库存仓库" prop="warehouse">
+              <el-select v-model="updateStockWarehouseFromData.warehouse"
+                         filterable
+                         style="width: 180px;"
+                         clearable
+                         placeholder="请选择仓库">
+                <el-option
+                    v-for="item in warehouseOptions"
+                    :key="item.value"
+                    :disabled="item.value == deleteWarehouse"
+                    :label="item.label"
+                    :value="item.value">
+                </el-option>
+              </el-select>
+            </el-form-item>
+
+          </el-form>
+
+
+          <span slot="footer" class="dialog-footer">
+            <el-button @click="deleteWarehouseDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="deleteWarehouseUpdateStock()">确 定</el-button>
           </span>
 
         </el-dialog>
@@ -377,32 +441,32 @@
 
       </div>
 
-      <!--   器材管理   -->
+      <!--   库存管理   -->
       <div>
 
         <el-dialog
             title="库存管理"
             :visible.sync="managEquipmentDialogVisible"
-            width="42%"
+            width="50%"
             @close="managClassdialogclose()"
             center>
 
 
           <el-form :inline="true"
-                   :model="equipmentQueryFromData"
+                   :model="stockQueryFromData"
                    class="demo-form-inline"
                    size="medium"
-                   ref="equipmentQueryFromData">
+                   ref="stockQueryFromData">
 
             <div style="display: flex;align-items: center;justify-content: center">
               <el-form-item label="所属仓库" prop="warehouseName">
                 <el-select
-                    v-model="equipmentQueryFromData.warehouseName"
+                    v-model="stockQueryFromData.warehouse"
                     clearable
                     style="width: 170px"
                     placeholder="请选择仓库">
                   <el-option
-                      v-for="item in classQueryFromData.classificationOptions"
+                      v-for="item in warehouseOptions"
                       :key="item.value"
                       :label="item.label"
                       :value="item.value">
@@ -410,68 +474,60 @@
                 </el-select>
               </el-form-item>
 
-              <el-form-item label="器材名称" prop="equipmentName">
+              <el-form-item label="器材名称" prop="equipment">
                 <el-select
-                    v-model="equipmentQueryFromData.equipmentName"
+                    v-model="stockQueryFromData.equipment"
                     clearable
                     style="width: 170px"
                     placeholder="请选择器材">
-                  <el-option
-                      v-for="item in classQueryFromData.classificationOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value">
-                  </el-option>
+                  <el-option-group
+                      v-for="group in options"
+                      :key="group.label"
+                      :label="group.label">
+                    <el-option
+                        v-for="item in group.options"
+                        :key="item.equipment"
+                        :label="item.equipment"
+                        :value="item.equipment">
+                    </el-option>
+                  </el-option-group>
                 </el-select>
               </el-form-item>
-            </div>
 
-
-            <div style="margin-left: 50px">
-
-              <el-form-item  label="库存数量" prop="stock">
-                <el-input-number
-                    v-model="equipmentQueryFromData.stock"
-                    size="small"
-                    style="width: 100px"
-                    controls-position="right"
-                    @change="handleChange"
-                    :min="1" :max="999">
-                </el-input-number>
-              </el-form-item>
-
-              <el-form-item>
-                <el-button type="primary" @click="">查询</el-button>
+              <el-form-item style="margin-left: 15px;">
+                <el-button type="primary" @click="submitStockQueryForm()">查询</el-button>
               </el-form-item>
               <el-form-item>
-                <el-button @click="resetQueryForm('equipmentQueryFromData')">重置</el-button>
+                <el-button @click="resetStockQueryForm('stockQueryFromData')">重置</el-button>
               </el-form-item>
+
             </div>
+
           </el-form>
 
 
           <el-table
-              :data="equipmentTableData"
+              :data="stockTableData"
               stripe
-              height="250"
+              height="300"
               style="width: 100%">
 
             <el-table-column
-                prop="warehouseName"
+                prop="warehouse"
                 label="仓库名称"
                 align="center"
             >
             </el-table-column>
 
             <el-table-column
-                prop="equipmentName"
+                prop="equipment"
                 label="器材名称"
                 align="center"
             >
             </el-table-column>
 
             <el-table-column
-                prop="stock"
+                prop="totalStock"
                 label="库存数量"
                 align="center"
             >
@@ -487,7 +543,13 @@
                 <el-button type="primary"
                            size="mini"
                            plain round
-                           @click="modifyEquipment(scope.$index, scope.row)">修改
+                           @click="modifyStock(scope.$index, scope.row)">修改
+                </el-button>
+
+                <el-button type="danger"
+                           size="mini"
+                           plain round
+                           @click="deleteStockMessageBox(scope.$index, scope.row)">删除
                 </el-button>
 
               </template>
@@ -511,27 +573,27 @@
 
         <el-dialog
             title="修改库存"
-            :visible.sync="modifyEquipmentDialogVisible"
+            :visible.sync="modifyStockDialogVisible"
             width="30%"
             center>
 
           <el-form :inline="true"
-                   :model="modifyEquipmentFromData"
+                   :model="modifyStockFromData"
                    class="demo-form-inline"
                    size="medium"
-                   :rules="modifyEquipmentRules"
-                   ref="modifyEquipmentFromData">
+                   :rules="modifyStockRules"
+                   ref="modifyStockFromData">
 
 
             <div style="display: flex;align-items: center;justify-content: center;">
 
-              <el-form-item label="所属仓库" prop="warehouseName">
+              <el-form-item label="所属仓库" prop="warehouse">
                 <el-select
-                    v-model="modifyEquipmentFromData.warehouseName"
+                    v-model="modifyStockFromData.warehouse"
                     clearable
                     placeholder="请选择仓库">
                   <el-option
-                      v-for="item in classQueryFromData.classificationOptions"
+                      v-for="item in warehouseOptions"
                       :key="item.value"
                       :label="item.label"
                       :value="item.value">
@@ -545,7 +607,7 @@
               <el-form-item label="器材名称" prop="equipmentName">
                 <el-input
                     placeholder="请输入修改后的器材名称"
-                    v-model="modifyEquipmentFromData.equipmentName"
+                    v-model="modifyStockFromData.equipment"
                     :disabled="true"
                     clearable>
                 </el-input>
@@ -555,12 +617,12 @@
             <div style="margin-left: 60px">
               <el-form-item label="库存数量" prop="stock">
                 <el-input-number
-                    v-model="modifyEquipmentFromData.stock"
+                    v-model="modifyStockFromData.totalStock"
                     size="small"
                     style="width: 100px"
                     controls-position="right"
                     @change="handleChange"
-                    :min="1" :max="999">
+                    :min="1" :max="9999">
                 </el-input-number>
               </el-form-item>
             </div>
@@ -569,8 +631,8 @@
 
 
           <span slot="footer" class="dialog-footer">
-            <el-button @click="modifyEquipmentDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="modifyEquipmentMessageBox">确 定</el-button>
+            <el-button @click="modifyStockDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="modifyStockMessageBox">确 定</el-button>
           </span>
 
         </el-dialog>
@@ -578,21 +640,21 @@
 
         <!--    新增库存    -->
         <el-dialog title="新增库存"
-                   :visible.sync="addEquipmentDialogVisible"
-                   @close="addEquipmentdialogclose()"
+                   :visible.sync="addStockDialogVisible"
+                   @close="addStockdialogclose()"
                    width="30%"
                    center>
 
-          <el-form :model="addEquipmentFromData" ref="addEquipmentFromData" :rules="addEquipmentRules">
+          <el-form :model="addStockFromData" ref="addStockFromData" :rules="addStockRules">
 
 
-            <el-form-item label="仓库名称" :label-width="formLabelWidth" prop="warehouseName">
+            <el-form-item label="仓库名称" :label-width="formLabelWidth" prop="warehouse">
               <el-select
-                  v-model="addEquipmentFromData.warehouseName"
+                  v-model="addStockFromData.warehouse"
                   clearable
                   placeholder="请选择仓库">
                 <el-option
-                    v-for="item in classQueryFromData.classificationOptions"
+                    v-for="item in warehouseOptions"
                     :key="item.value"
                     :label="item.label"
                     :value="item.value">
@@ -600,31 +662,35 @@
               </el-select>
             </el-form-item>
 
-            <el-form-item label="器材名称" :label-width="formLabelWidth" prop="equipmentName">
+            <el-form-item label="器材名称" :label-width="formLabelWidth" prop="equipment">
               <el-select
-                  v-model="addEquipmentFromData.equipmentName"
+                  v-model="addStockFromData.equipment"
                   clearable
                   placeholder="请选择器材">
-                <el-option
-                    v-for="item in classQueryFromData.classificationOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value">
-                </el-option>
+                <el-option-group
+                    v-for="group in options"
+                    :key="group.label"
+                    :label="group.label">
+                  <el-option
+                      v-for="item in group.options"
+                      :key="item.equipment"
+                      :label="item.equipment"
+                      :value="item.equipment">
+                  </el-option>
+                </el-option-group>
+
               </el-select>
             </el-form-item>
 
 
-
-
-            <el-form-item label="新增数量" :label-width="formLabelWidth" prop="stockNum">
+            <el-form-item label="新增数量" :label-width="formLabelWidth" prop="stock">
               <el-input-number
-                  v-model="addEquipmentFromData.stockNum"
+                  v-model="addStockFromData.stock"
                   size="small"
                   style="width: 100px"
                   controls-position="right"
                   @change="handleChange"
-                  :min="1" :max="10">
+                  :min="1" :max="9999">
               </el-input-number>
             </el-form-item>
 
@@ -633,8 +699,8 @@
 
 
           <div slot="footer" class="dialog-footer">
-            <el-button @click="addEquipmentDialogVisible = false">取 消</el-button>
-            <el-button type="primary" @click="submitAddEquipmentFromData(addEquipmentFromData)">确 定</el-button>
+            <el-button @click="addStockDialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click="submitaddStockFromData()">确 定</el-button>
           </div>
         </el-dialog>
 
@@ -655,190 +721,110 @@ export default {
 
     return {
 
-      countWarehouse: 3,
-      countEquipments: 330,
+      countWarehouse: 0,
+      countEquipments: 0,
+      deleteWarehouse: '',
 
-      addEquipmentFromData: {
+      updateStockWarehouseFromData: {},
 
-        addwarehouseName: '',
-        addEquipmentName: '',
-        stockNum: 1,
+      warehouseOptions: [
+        {
+          label: '',
+          value: '',
+        },
+      ],
+
+      addStockFromData: {
+
+        warehouse: '',
+        equipment: '',
+        stock: 1,
 
       },
 
-      addClassFromData: {
-        addwarehouseName: '',
+      addWarehouseFromData: {
+        warehouse: '',
+        address: '',
       },
 
-      modifyClassFromData: {
+      modifyWarehouseFromData: {
         oldName: '',
-        modifywarehouseName: '',
+        warehouse: '',
+        address: '',
+        oldAddress: '',
       },
 
-      modifyEquipmentFromData: {
-        oldEquipmentName: '',
-        oldwarehouseName: '',
-        oldStock: 0,
-        equipmentName: '',
-        warehouseName: '',
-        stock: 1,
+      modifyStockFromData: {
+        oldwarehouse: '',
+        oldTotalStock: 0,
+        equipment: '',
+        warehouse: '',
+        totalStock: 0,
+        id: 0,
       },
 
 
-      equipmentQueryFromData: {
-        equipmentName: '',
-        warehouseName: '',
-        stock: 1,
+      stockQueryFromData: {
+        equipment: '',
+        warehouse: '',
       },
 
-      classQueryFromData: {
-        classification: '',
-        classificationOptions: [
-          {
-            value: '武术',
-            label: '武术'
-          },
-          {
-            value: '小球',
-            label: '小球'
-          },
-          {
-            value: '大球',
-            label: '大球'
+      warehouseQueryFromData: {
+        warehouse: '',
+      },
+
+      queryPickerOptions: {
+        disabledDate(time) {
+          return (time.getTime() + 3600 * 1000 * 24 * 30) < Date.now() || time.getTime() > Date.now();
+        },
+        shortcuts: [{
+          text: '最近一周',
+          onClick(picker) {
+            const end = new Date();
+            const start = new Date();
+            start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+            picker.$emit('pick', [start, end]);
           }
-        ],
+        }, {
+          text: '最近一个月',
+          onClick(picker) {
+            const end = new Date();
+            const start = new Date();
+            start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+            picker.$emit('pick', [start, end]);
+          }
+        }]
       },
+
+      operationTypeOptions: [
+        {
+          value: 1,
+          label: '新增'
+        },
+        {
+          value: -1,
+          label: '删除'
+        },
+        {
+          value: 0,
+          label: '修改'
+        },
+      ],
 
       queryFromData: {
-
-        classification: '',
-        classificationOptions: [
-          {
-            value: '武术',
-            label: '武术'
-          },
-          {
-            value: '小球',
-            label: '小球'
-          },
-          {
-            value: '大球',
-            label: '大球'
-          }
-        ],
-
-        equipment: '',
-        equipmentOptions: [{
-          value: '乒乓球',
-          label: '乒乓球'
-        }, {
-          value: '羽毛球',
-          label: '羽毛球'
-        }, {
-          value: '篮球',
-          label: '篮球'
-        }, {
-          value: '足球',
-          label: '足球'
-        }, {
-          value: '排球',
-          label: '排球'
-        }],
         picker: [],
         queryStarTime: '',
         queryEndTime: '',
-        queryPickerOptions: {
-          disabledDate(time) {
-            return (time.getTime() + 3600 * 1000 * 24 * 30) < Date.now() || time.getTime() > Date.now();
-          },
-          shortcuts: [{
-            text: '最近一周',
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-              picker.$emit('pick', [start, end]);
-            }
-          }, {
-            text: '最近一个月',
-            onClick(picker) {
-              const end = new Date();
-              const start = new Date();
-              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-              picker.$emit('pick', [start, end]);
-            }
-          }]
-        },
-
         operationType: '',
-        operationTypeOptions: [
-          {
-            value: '新增',
-            label: '新增'
-          },
-          {
-            value: '删除',
-            label: '删除'
-          },
-          {
-            value: '修改',
-            label: '修改'
-          },
-        ],
-
-        operationName: '',
-        operationNameOptions: [
-          {
-            value: '王小明',
-            label: '王小明'
-          },
-          {
-            value: '李二蛋',
-            label: '李二蛋'
-          },
-          {
-            value: '赵六哥',
-            label: '赵六哥'
-          },
-        ],
-
-        specificOperation: '',
-
+        username: '',
+        details: '',
       },
 
       applyFromData: {
         name: '',
         equipment: '',
-        equipmentOptions: [{
-          value: '乒乓球',
-          label: '乒乓球'
-        }, {
-          value: '羽毛球',
-          label: '羽毛球'
-        }, {
-          value: '篮球',
-          label: '篮球'
-        }, {
-          value: '足球',
-          label: '足球'
-        }, {
-          value: '排球',
-          label: '排球'
-        }],
         num: 1,
         warehouse: '',
-        warehouseOptions: [
-          {
-            value: '仓库1',
-            label: '仓库1'
-          }, {
-            value: '仓库2',
-            label: '仓库2'
-          }, {
-            value: '仓库3',
-            label: '仓库3'
-          }
-        ],
         applyTime: '',
         applyReason: '',
       },
@@ -846,282 +832,339 @@ export default {
       currentPage: 1,
       pageSize: 6,
 
-      tableData: [{
-        applicationDate: '2023-2-8 08:49',
-        name: 'xxx',
-        reason: '现数量不能满足教学需求',
-        operationStatus: 0,
-      },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '弥补报废后差异',
-          operationStatus: 1,
+      tableData: [],
 
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '现数量不能满足教学需求现数量不能满足教学需求现数量不能满足教学需求现数量不能满足教学需求现数量不能满足教学需求',
-          operationStatus: -1,
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '现数量不能满足教学需求',
-          operationStatus: 1,
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '现数量不能满足教学需求',
-          operationStatus: 0
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '现数量不能满足教学需求',
-          operationStatus: 0
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '现数量不能满足教学需求',
-          operationStatus: -1
-        },
-        {
-          applicationDate: '2023-2-8 08:49',
-          name: 'xxx',
-          reason: '现数量不能满足教学需求',
-          operationStatus: -1
-        },],
+      WarehouseTableData: [],
 
-      ClassTableData: [
-        {
-          warehouseName: '大球',
-        },
-        {
-          warehouseName: '武术',
-        },
-        {
-          warehouseName: '田径',
-        },
-        {
-          warehouseName: '比赛',
-        },
-        {
-          warehouseName: '大球',
-        },
-        {
-          warehouseName: '武术',
-        },
-        {
-          warehouseName: '田径',
-        },
-        {
-          warehouseName: '比赛',
-        },
-      ],
-
-      equipmentTableData: [
-        {
-          equipmentName: '乒乓球',
-          warehouseName: '大球',
-          stock: 55,
-        },
-        {
-          equipmentName: '乒乓球',
-          warehouseName: '武术',
-          stock: 55,
-        },
-        {
-          equipmentName: '乒乓球',
-          warehouseName: '田径',
-          stock: 55,
-        },
-        {
-          equipmentName: '乒乓球',
-          warehouseName: '比赛',
-          stock: 55,
-        },
-      ],
+      stockTableData: [],
 
       managClassDialogVisible: false,
       managEquipmentDialogVisible: false,
-      modifyClassDialogVisible: false,
-      modifyEquipmentDialogVisible: false,
-      addClassDialogVisible: false,
-      addEquipmentDialogVisible: false,
+      modifyWarehouseDialogVisible: false,
+      modifyStockDialogVisible: false,
+      addWarehouseDialogVisible: false,
+      addStockDialogVisible: false,
+      deleteWarehouseDialogVisible: false,
       formLabelWidth: '120px',
 
       flag: true,
       addFlag: false,
 
-      modifyClassRules: {
-        modifywarehouseName: [
-          {required: true, message: '请输入仓库！', trigger: ['change', 'blur']}
+      modifyWarehouseRules: {
+        warehouse: [
+          {required: true, message: '请输入仓库名称！', trigger: ['change', 'blur']}
+        ],
+        address: [
+          {required: true, message: '请输入仓库地址！', trigger: ['change', 'blur']}
         ],
       },
 
-      modifyEquipmentRules: {
+      modifyStockRules: {
         warehouseName: [
           {required: true, message: '请选择所属仓库！', trigger: ['change', 'blur']}
         ]
 
       },
 
-      addClassRules: {
-        addwarehouseName: [
+      addWarehouseRules: {
+        warehouse: [
           {required: true, message: '请输入需要添加的仓库名称！', trigger: ['change', 'blur']}
+        ],
+        address: [
+          {required: true, message: '请输入需要添加的仓库地址！', trigger: ['change', 'blur']}
         ]
       },
 
-      addEquipmentRules: {
-        warehouseName: [
+      addStockRules: {
+        warehouse: [
           {required: true, message: '请选择仓库名称！', trigger: ['change', 'blur']}
         ],
-        equipmentName: [
+        equipment: [
           {required: true, message: '请输入器材名称！', trigger: ['change', 'blur']}
         ],
-        stockNum: [
+        stock: [
           {required: true, message: '数量不能为空！', trigger: ['change', 'blur']}
         ],
 
       },
 
+      username: '',
 
-      userInfo: {}
+      userInfo: {},
+      adminOptions: [],
+      options: [{
+        label: '',
+        options: [{
+          value: '',
+          label: ''
+        },]
+      },
+      ],
+
+      test: [
+        {
+          label: '',
+          options: [
+            {},
+          ]
+        }
+      ],
+
+      equipmentInfo: [
+        {},
+      ],
 
     }
   },
   created() {
-    this.getUserInfo()
+
+    this.getUserInfo();
+    this.getClassInfo();
+    this.getEquipmentInfo();
+    this.getAdminInfo();
+    this.getOperationInfo();
+    this.getWarehouseInfo();
+    this.getStockInfo();
+
   },
 
   methods: {
 
-    submitAddForm(formName) {
-      this.$refs.addEquipmentFromData.validate((valid) => {
-        if (valid) {
+    getClassInfo() {
+      this.$axios.get("/tb/classification/info").then(res => {
 
-          for (let i = 0; i < this.addEquipmentFromData.equipments.length; i++) {
-            let equipmentValue = this.addEquipmentFromData.equipments[i].value
-            if (!equipmentValue) {
-              this.$message.error('请将信息填完整后重试！');
-              return false
-            }
-          }
-
-          this.dialogFormVisible = false
-          console.log("this.addEquipmentFromData数据")
-          console.log(this.addEquipmentFromData)
-          for (let i = 0; i < this.addEquipmentFromData.equipments.length; i++) {
-            console.log('器材名称: ' + this.addEquipmentFromData.equipments[i].value
-                + '  数量：' + this.addEquipmentFromData.equipments[i].num
-            )
-          }
-          console.log('仓库: ' + this.addEquipmentFromData.warehouse
-              + '\n日期: ' + this.addEquipmentFromData.picker
-              + '\n原因: ' + this.addEquipmentFromData.reason)
-        } else {
-          console.log('error submit!!');
-          return false;
+        let classifications = res.data.data.classifications;
+        for (let i = 0; i < classifications.length; i++) {
+          this.$set(this.test, i, {
+            label: classifications[i].className,
+          })
         }
-      });
+      })
+    },
+
+    getStockInfo() {
+      this.$axios.get("/tb/stock/info").then(res => {
+        let stockList = res.data.data.stockList;
+
+        this.countEquipments = 0;
+        this.stockTableData = [];
+        for (let i = 0; i < stockList.length; i++) {
+          this.countEquipments += stockList[i].totalStock;
+
+          this.$set(this.stockTableData, i, {
+            id: stockList[i].id,
+            warehouse: stockList[i].warehouse,
+            equipment: stockList[i].equipment,
+            totalStock: stockList[i].totalStock,
+          })
+
+        }
+
+        console.log("this.countEquipments")
+        console.log(this.countEquipments)
+      })
+    },
+
+    getWarehouseInfo() {
+      this.$axios.get("/tb/warehouse/info").then(res => {
+
+        let warehouseList = res.data.data.warehouseList;
+        console.log("===============")
+        console.log(warehouseList)
+        this.countWarehouse = warehouseList.length;
+
+
+        this.warehouseOptions = [];
+        this.WarehouseTableData = [];
+        for (let i = 0; i < warehouseList.length; i++) {
+          this.$set(this.WarehouseTableData, i, {
+            warehouse: warehouseList[i].warehouse,
+            address: warehouseList[i].address,
+          })
+
+          this.$set(this.warehouseOptions, i, {
+            label: warehouseList[i].warehouse,
+            value: warehouseList[i].warehouse,
+          })
+        }
+      })
+    },
+
+    getOperationInfo() {
+      this.$axios.get("/tb/operate/info", {
+        // 传递的参数
+        params: {
+          operationClass: 1,
+        }
+        // 回调函数,一定要使用箭头函数,不然this的指向不是vue示例
+      }).then(res => {
+
+        let operateList = res.data.data.operateList;
+
+        console.log("+++++++++++")
+        console.log(operateList)
+
+        this.tableData = [];
+        for (let i = 0; i < operateList.length; i++) {
+          this.$set(this.tableData, i, {
+            username: operateList[i].username,
+            operationType: operateList[i].operationType,
+            details: operateList[i].details,
+            operationDate: operateList[i].operationDate,
+          })
+        }
+      })
+    },
+
+    getAdminInfo() {
+      this.$axios.get("/tb/user/admin").then(res => {
+
+        let adminList = res.data.data.adminList;
+        console.log(adminList)
+
+        for (let i = 0; i < adminList.length; i++) {
+
+          this.$set(this.adminOptions, i, {
+            label: adminList[i].name,
+            value: adminList[i].username,
+          })
+        }
+      })
+    },
+
+    getEquipmentInfo() {
+      this.$axios.get("/tb/equipment/info").then(res => {
+
+        let equipments = res.data.data.equipments;
+        this.equipmentInfo = equipments;
+
+        console.log("equipments")
+        console.log(equipments)
+
+        for (let i = 0; i < this.equipmentInfo.length; i++) {
+          if (this.equipmentInfo[i].combination == 1) {
+            this.equipmentInfo[i].equipments = JSON.parse(this.equipmentInfo[i].equipments)
+          }
+        }
+
+        for (let i = 0; i < this.test.length; i++) {
+          this.test[i].options = equipments.filter(item => {
+            return item.className == this.test[i].label;
+          })
+        }
+        this.options = this.test
+
+        console.log("this.options")
+        console.log(this.options)
+        console.log("this.test")
+        console.log(this.test)
+
+      })
+    },
+
+    tableRowClassName({row, rowIndex}) {
+
+      if (row.operationType == -1) {
+        return 'warning-row';
+      } else if (row.operationType == 0) {
+        return 'conduct-row';
+      }
+      return 'success-row';
     },
 
     operationStatus(row, column) {
-      if (row.operationStatus === 0) {
+      if (row.operationType === 0) {
         return '修改'
-      } else if (row.operationStatus === 1) {
+      } else if (row.operationType === 1) {
         return '添加'
       } else {
         return '删除'
       }
     },
 
+    operateName(row, column) {
+      for (let i = 0; i < this.adminOptions.length; i++) {
+        if (row.username == this.adminOptions[i].value) {
+          return this.adminOptions[i].label;
+          break;
+        }
+      }
+    },
+
 
     getUserInfo() {
-      this.$axios.get("/sysUser/UserInfo").then(res => {
+      this.$axios.get("/tb/userInfo").then(res => {
+        this.name = res.data.data.name;
+        this.username = res.data.data.username;
+        console.log("username:" + this.username)
+        this.queryFromData.name = res.data.data.username;
+        console.log(res.data.data)
 
-        this.userInfo = res.data.data;
       })
     },
 
-    removeDomain(item) {
-      if (this.addEquipmentFromData.equipments.length > 1) {
-        // 表示先获取这个元素的下标，然后从这个下标开始计算，删除长度为1的元素
-        console.log("item")
-        console.log(item)
-        this.addEquipmentFromData.equipments.splice(this.addEquipmentFromData.equipments.indexOf(item), 1);
-      }
-      this.flags()
-      this.addFlag = false
-    },
-
-
-    addDomain() {
-      let len = this.addEquipmentFromData.equipments.length
-      if (len < this.addEquipmentFromData.equipmentOptions.length) {
-        this.$set(this.addEquipmentFromData.equipments, len, {
-          num: 1,
-          // key: Date.now(),
-          value: ''
-        })
-        this.flags()
-      }
-      if ((len + 1) == this.addEquipmentFromData.equipmentOptions.length) {
-
-        this.addFlag = true
-      }
-
-
-    },
-
-    // 判断数组长度
-    flags() {
-      if (this.addEquipmentFromData.equipments.length < 2) {
-        this.flag = true
-      } else {
-        //先赋值为true再赋为false, 不然会没反应
-        this.flag = true
-        this.flag = false
-      }
-    },
 
     addClass() {
-      this.addClassDialogVisible = true;
+      this.addWarehouseDialogVisible = true;
     },
 
     addEquipment() {
-      this.addEquipmentDialogVisible = true;
+      this.addStockDialogVisible = true;
     },
 
-    submitAddClassFromData(formName) {
+    submitAddWarehouseFromData() {
+      this.$refs.addWarehouseFromData.validate((valid) => {
+        if (valid) {
+          this.addWarehouseFromData.operationDate = this.getCurrentTime();
+          this.addWarehouseFromData.operationType = 1;
+          this.addWarehouseFromData.username = this.username;
+          this.addWarehouseFromData.operationClass = 1;
+          this.addWarehouseFromData.details = "添加仓库，名称：" + this.addWarehouseFromData.warehouse + "，地址："
+              + this.addWarehouseFromData.address;
+
+          this.$axios.post("/tb/warehouse/add", this.addWarehouseFromData).then(res => {
+
+            this.getWarehouseInfo();
+            this.getOperationInfo();
+            this.addWarehouseDialogVisible = false;
+
+            this.$message({
+              type: 'success',
+              message: '修改仓库信息成功！'
+            });
+
+          })
+
+        }
+      })
 
     },
-    submitAddEquipmentFromData(formName) {
-      this.$refs.addEquipmentFromData.validate((valid) => {
+
+    submitaddStockFromData() {
+      this.$refs.addStockFromData.validate((valid) => {
         if (valid) {
 
-          if (this.value) {
-            for (let i = 0; i < this.addEquipmentFromData.equipments.length; i++) {
-              let equipmentValue = this.addEquipmentFromData.equipments[i].value
-              if (!equipmentValue) {
-                this.$message.error('请将信息填完整后重试！');
-                return false
-              }
-            }
-          }
+          let asfd = this.addStockFromData;
 
-          this.addEquipmentDialogVisible = false
-          console.log("this.addEquipmentFromData")
-          console.log(this.addEquipmentFromData)
-          for (let i = 0; i < this.addEquipmentFromData.equipments.length; i++) {
-            console.log('器材名称: ' + this.addEquipmentFromData.equipments[i].value
-                + '  数量：' + this.addEquipmentFromData.equipments[i].num
-            )
-          }
+          asfd.operationDate = this.getCurrentTime();
+          asfd.operationType = 1;
+          asfd.username = this.username;
+          asfd.operationClass = 1;
+          asfd.details = "添加仓库： “" + asfd.warehouse + " ” 器材：“" + asfd.equipment + "” 库存，数量为：" + asfd.stock;
+
+          this.$axios.post("/tb/stock/add", asfd).then(res => {
+
+            this.getStockInfo();
+            this.getOperationInfo();
+            this.addStockDialogVisible = false;
+
+            this.$message({
+              type: 'success',
+              message: '添加库存成功！'
+            });
+
+          })
+
         } else {
           console.log('error submit!!');
           return false;
@@ -1129,41 +1172,81 @@ export default {
       });
     },
 
-    addClassdialogclose() {
+    addWarehousedialogclose() {
 
-      this.$refs.addClassFromData.resetFields();
+      this.$refs.addWarehouseFromData.resetFields();
 
     },
 
-    addEquipmentdialogclose() {
-
+    addStockdialogclose() {
       this.$nextTick(function () {
-        this.$refs.addEquipmentFromData.resetFields();
+        this.$refs.addStockFromData.resetFields();
       })
-      this.value = false;
-
-      this.addEquipmentFromData.equipments = [{
-        value: '',
-        num: 1,
-      }]
-
     },
 
     managClassdialogclose() {
-      this.classQueryFromData.classification = '';
+      this.warehouseQueryFromData.warehouse = '';
     },
 
-    modifyClassMessageBox() {
-      this.$confirm('此操作将该仓库名称由：“' + this.modifyClassFromData.oldName +
-          '” 修改为： “' + this.modifyClassFromData.modifywarehouseName + '” , 该操作不可撤回，是否继续?', '提示', {
+    updateWarehouse() {
+
+      this.modifyWarehouseFromData.operationDate = this.getCurrentTime();
+      this.modifyWarehouseFromData.operationType = 0;
+      this.modifyWarehouseFromData.username = this.username;
+      this.modifyWarehouseFromData.operationClass = 1;
+      this.modifyWarehouseFromData.details = "修改仓库信息，";
+
+      if (this.modifyWarehouseFromData.oldName != this.modifyWarehouseFromData.warehouse) {
+        this.modifyWarehouseFromData.details += " 将仓库名称由：" + this.modifyWarehouseFromData.oldName + " 修改为："
+            + this.modifyWarehouseFromData.warehouse;
+      }
+      if (this.modifyWarehouseFromData.oldAddress != this.modifyWarehouseFromData.address) {
+        this.modifyWarehouseFromData.details += " 将仓库地址由：" + this.modifyWarehouseFromData.oldAddress + " 修改为："
+            + this.modifyWarehouseFromData.address;
+      }
+
+      this.$axios.post("/tb/warehouse/update", this.modifyWarehouseFromData).then(res => {
+
+        this.getWarehouseInfo();
+        this.getOperationInfo();
+        this.modifyWarehouseDialogVisible = false
+
+        this.$message({
+          type: 'success',
+          message: '修改仓库信息成功！'
+        });
+
+      })
+
+    },
+
+    modifyWarehouseMessageBox() {
+
+      let mwfd = this.modifyWarehouseFromData;
+
+      if (mwfd.oldName == mwfd.warehouse && mwfd.address == mwfd.oldAddress) {
+        this.modifyWarehouseDialogVisible = false;
+        return;
+      }
+
+      for (let i = 0; i < this.warehouseOptions.length; i++) {
+        if (mwfd.warehouse == this.warehouseOptions[i].value) {
+          this.$message({
+            type: 'warning',
+            message: '仓库名称冲突！'
+          });
+          return;
+        }
+      }
+
+      this.$confirm('此操作将修改该仓库信息，操作不可撤回，是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        this.$message({
-          type: 'success',
-          message: '修改成功!'
-        });
+
+        this.updateWarehouse();
+
       }).catch(() => {
         this.$message({
           type: 'info',
@@ -1172,19 +1255,105 @@ export default {
       });
     },
 
-    modifyEquipmentMessageBox() {
-      this.$confirm('此操作将修改器材信息，仓库名称由：“' + this.modifyEquipmentFromData.oldwarehouseName +
-          '” 修改为：“' + this.modifyEquipmentFromData.warehouseName + '”，' +
-          '器材名称由："' + this.modifyEquipmentFromData.oldEquipmentName +
-          '"修改为："' + this.modifyEquipmentFromData.equipmentName + '"，该操作不可撤回，是否继续?', '提示', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(() => {
+    updateStock() {
+
+      let msfd = this.modifyStockFromData;
+
+      msfd.operationDate = this.getCurrentTime();
+      msfd.operationType = 0;
+      msfd.username = this.username;
+      msfd.operationClass = 1;
+      msfd.details = "修改 " + msfd.oldwarehouse + "下的" + msfd.equipment + " ";
+
+      if (msfd.warehouse != msfd.oldwarehouse) {
+        msfd.details += "将库存仓库由：" + msfd.oldwarehouse + " 修改为："
+            + msfd.warehouse;
+      }
+      if (msfd.totalStock != msfd.oldTotalStock) {
+        msfd.details += "将库存数量由：" + msfd.oldTotalStock +
+            " 修改为：" + msfd.totalStock;
+      }
+
+
+      this.$axios.post("/tb/stock/update", msfd).then(res => {
+
+        this.getStockInfo();
+        this.getWarehouseInfo();
+        this.getOperationInfo();
         this.$message({
           type: 'success',
           message: '修改成功!'
         });
+        this.modifyStockDialogVisible = false
+
+      })
+
+    },
+
+    deleteStock(row) {
+      this.$axios.delete("/tb/stock/delete", {
+        // 传递的参数
+        data: {
+          id: row.id,
+          operationDate: this.getCurrentTime(),
+          operationType: -1,
+          operationClass: 1,
+          username: this.username,
+          details: "删除了仓库 “" + row.warehouse + " ” 下器材为：“" + row.equipment + "“ 的库存",
+
+        }
+      }).then(res => {
+
+        this.$message({
+          type: 'success',
+          message: '删除成功!'
+        });
+
+        this.getStockInfo();
+        this.getOperationInfo();
+
+      })
+    },
+
+    deleteStockMessageBox(index, row) {
+
+      this.$confirm('此操作将删除 “' + row.warehouse + '“ 仓库下的 ”' + row.equipment
+          + '“ 器材的库存，该操作不可撤回，是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+
+        this.deleteStock(row);
+
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消修改'
+        });
+      });
+
+    },
+
+    modifyStockMessageBox() {
+
+      let msfd = this.modifyStockFromData;
+
+      if (msfd.warehouse == msfd.oldwarehouse &&
+          msfd.totalStock == msfd.oldTotalStock) {
+
+        this.modifyStockDialogVisible = false
+        return;
+      }
+
+      this.$confirm('此操作将修改器材信息，该操作不可撤回，是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+
+        this.updateStock();
+
       }).catch(() => {
         this.$message({
           type: 'info',
@@ -1193,17 +1362,92 @@ export default {
       });
     },
 
-    deleteClassMessageBox(index, row) {
-      this.$confirm('此操作将删除名称为：“' + row.warehouseName +
+    deletewarehouse() {
+      this.$axios.delete("/tb/warehouse/delete", {
+        // 传递的参数
+        data: {
+          warehouse: this.deleteWarehouse,
+          operationDate: this.getCurrentTime(),
+          operationType: -1,
+          operationClass: 1,
+          username: this.username,
+          details: "删除了仓库 “" + this.deleteWarehouse,
+        }
+      }).then(res => {
+
+        this.$message({
+          type: 'success',
+          message: '删除成功!'
+        });
+
+        this.getWarehouseInfo();
+        this.getOperationInfo();
+
+      })
+
+    },
+
+    deleteWarehouseUpdateStock() {
+
+      if (!this.updateStockWarehouseFromData.warehouse) {
+        this.$message({
+          type: 'warning',
+          message: '请选择仓库!'
+        });
+        return;
+      }
+
+      let updateState = false;
+
+      this.updateStockWarehouseFromData.oldWarehouse = this.deleteWarehouse;
+      this.updateStockWarehouseFromData.operationDate = this.getCurrentTime();
+      this.updateStockWarehouseFromData.operationType = 0;
+      this.updateStockWarehouseFromData.username = this.username;
+      this.updateStockWarehouseFromData.operationClass = 1;
+      this.updateStockWarehouseFromData.details = "因删除仓库，将该仓库下的所有库存仓库由：" + this.deleteWarehouse
+          + " 修改为：" + this.updateStockWarehouseFromData.warehouse;
+
+      this.$axios.post("/tb/stock/updateStockWarehouse", this.updateStockWarehouseFromData).then(res => {
+
+        updateState = true;
+
+        if (updateState) {
+
+          this.deletewarehouse();
+          this.getStockInfo();
+          this.deleteWarehouseDialogVisible = false;
+
+        } else {
+          this.$message({
+            type: 'warning',
+            message: '删除失败!'
+          });
+        }
+      })
+
+    },
+
+    deleteWarehouseMessageBox(index, row) {
+
+      this.$confirm('此操作将删除名称为：“' + row.warehouse +
           '” 的仓库 , 该操作不可撤回，是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        this.$message({
-          type: 'success',
-          message: '删除成功!'
-        });
+
+        this.deleteWarehouse = row.warehouse;
+
+        let stock = this.stockTableData;
+        for (let i = 0; i < stock.length; i++) {
+          if (this.deleteWarehouse == stock[i].warehouse) {
+            this.deleteWarehouseDialogVisible = true;
+            return;
+          }
+        }
+
+        this.deletewarehouse();
+
       }).catch(() => {
         this.$message({
           type: 'info',
@@ -1212,24 +1456,27 @@ export default {
       });
     },
 
-    modifyClass(index, row) {
+    modifyWarehouse(index, row) {
 
-      this.modifyClassFromData.oldName = row.warehouseName;
-      this.modifyClassFromData.modifywarehouseName = row.warehouseName;
+      this.modifyWarehouseFromData.oldName = row.warehouse;
+      this.modifyWarehouseFromData.warehouse = row.warehouse;
+      this.modifyWarehouseFromData.oldAddress = row.address;
+      this.modifyWarehouseFromData.address = row.address;
 
-      this.modifyClassDialogVisible = true;
+      this.modifyWarehouseDialogVisible = true;
     },
 
-    modifyEquipment(index, row) {
+    modifyStock(index, row) {
 
-      this.modifyEquipmentFromData.warehouseName = row.warehouseName;
-      this.modifyEquipmentFromData.equipmentName = row.equipmentName;
-      this.modifyEquipmentFromData.oldwarehouseName = row.warehouseName;
-      this.modifyEquipmentFromData.oldEquipmentName = row.equipmentName;
-      this.modifyEquipmentFromData.oldStock = row.stock;
-      this.modifyEquipmentFromData.stock = row.stock;
+      this.modifyStockFromData.warehouse = row.warehouse;
+      this.modifyStockFromData.equipment = row.equipment;
+      this.modifyStockFromData.oldwarehouse = row.warehouse;
+      this.modifyStockFromData.oldEquipment = row.equipment;
+      this.modifyStockFromData.oldTotalStock = row.totalStock;
+      this.modifyStockFromData.totalStock = row.totalStock;
+      this.modifyStockFromData.id = row.id;
 
-      this.modifyEquipmentDialogVisible = true;
+      this.modifyStockDialogVisible = true;
     },
 
     managClass() {
@@ -1274,23 +1521,72 @@ export default {
       });
     },
 
+    submitWarehouseQueryForm() {
+      this.$axios.get("/tb/warehouse/search", {
+        // 传递的参数
+        params: {
+          warehouse: this.warehouseQueryFromData.warehouse,
+        }
+        // 回调函数,一定要使用箭头函数,不然this的指向不是vue示例
+      }).then(res => {
+
+        let warehouseList = res.data.data.warehouseList;
+
+        this.WarehouseTableData = [];
+        for (let i = 0; i < warehouseList.length; i++) {
+          this.$set(this.WarehouseTableData, i, {
+            warehouse: warehouseList[i].warehouse,
+            address: warehouseList[i].address,
+          })
+        }
+
+      })
+    },
+
     submitQueryForm(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
 
-          let starDate = this.$moment(this.queryFromData.picker[0]).format('YYYY-MM-DD')
-          let endDate = this.$moment(this.queryFromData.picker[1]).format('YYYY-MM-DD')
+          if (this.queryFromData.picker.length != 0) {
+            let starDate = this.$moment(this.queryFromData.picker[0]).format('YYYY-MM-DD HH:mm')
+            let endDate = this.$moment(this.queryFromData.picker[1]).format('YYYY-MM-DD HH:mm')
 
-          this.queryFromData.queryStarTime = starDate
-          this.queryFromData.queryEndTime = endDate
-          console.log("this.queryFromData数据")
-          console.log('器材名称: ' + this.queryFromData.equipment
-              + '\n仓库: ' + this.queryFromData.warehouse
-              + '\n日期: ' + '开始时间：' + this.queryFromData.queryStarTime
-              + '结束时间：' + this.queryFromData.queryEndTime
-              + '\n原因: ' + this.queryFromData.reason
-              + '\n状态: ' + this.queryFromData.operationStatus
-              + '\n审核人员: ' + this.queryFromData.auditor)
+            this.queryFromData.queryStarTime = starDate
+            this.queryFromData.queryEndTime = endDate
+          } else {
+            this.queryFromData.queryStarTime = null;
+            this.queryFromData.queryEndTime = null;
+          }
+
+          console.log("=============")
+          console.log(this.queryFromData.username)
+
+          this.$axios.get("/tb/operate/search", {
+            // 传递的参数
+            params: {
+              username: this.queryFromData.username,
+              operationClass: 1,
+              operationType: this.queryFromData.operationType,
+              queryStarTime: this.queryFromData.queryStarTime,
+              queryEndTime: this.queryFromData.queryEndTime,
+              details: this.queryFromData.details,
+            }
+            // 回调函数,一定要使用箭头函数,不然this的指向不是vue示例
+          }).then(res => {
+
+            let operateList = res.data.data.operateList;
+
+            this.tableData = [];
+            for (let i = 0; i < operateList.length; i++) {
+              this.$set(this.tableData, i, {
+                username: operateList[i].username,
+                operationType: operateList[i].operationType,
+                details: operateList[i].details,
+                operationDate: operateList[i].operationDate,
+              })
+            }
+          })
+
         } else {
           console.log('error submit!!');
           return false;
@@ -1300,9 +1596,9 @@ export default {
 
     getCurrentTime() {
       let yy = new Date().getFullYear();
-      let mm = new Date().getMonth() + 1;
-      let dd = new Date().getDate();
-      let hh = new Date().getHours();
+      let mm = new Date().getMonth() + 1 < 10 ? '0' + (new Date().getMonth() + 1) : new Date().getMonth() + 1;
+      let dd = new Date().getDate() < 10 ? '0' + new Date().getDate() : new Date().getDate();
+      let hh = new Date().getHours() < 10 ? '0' + new Date().getHours() : new Date().getHours();
       let mf = new Date().getMinutes() < 10 ? '0' + new Date().getMinutes() : new Date().getMinutes();
 
       let dateValue = yy + '-' + mm + '-' + dd + ' ' + hh + ':' + mf;
@@ -1342,9 +1638,45 @@ export default {
       return "text-align:center";
     },
 
+    resetWarehouseQueryForm() {
+      this.warehouseQueryFromData.warehouse = '';
+      this.getWarehouseInfo();
+
+    },
+
+    submitStockQueryForm() {
+
+      this.$axios.get("/tb/stock/search", {
+        // 传递的参数
+        params: {
+          warehouse: this.stockQueryFromData.warehouse,
+          equipment: this.stockQueryFromData.equipment,
+        }
+        // 回调函数,一定要使用箭头函数,不然this的指向不是vue示例
+      }).then(res => {
+
+        let stockList = res.data.data.stockList;
+
+        this.stockTableData = [];
+        for (let i = 0; i < stockList.length; i++) {
+          this.$set(this.stockTableData, i, {
+            id: stockList[i].id,
+            warehouse: stockList[i].warehouse,
+            equipment: stockList[i].equipment,
+            totalStock: stockList[i].totalStock,
+          })
+        }
+      })
+    },
+
+    resetStockQueryForm(formName) {
+      this.$refs[formName].resetFields();
+      this.getStockInfo();
+    },
+
     resetQueryForm(formName) {
       this.$refs[formName].resetFields();
-      this.equipmentQueryFromData.num = 1;
+      this.getOperationInfo();
     }
   },
 
