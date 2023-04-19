@@ -8,7 +8,7 @@
           <img src="../assets/logo.png"/>
           <div class="userInfo">
             <p class="name">{{ userInfo.name }}</p>
-            <p class="access">{{userRole}}</p>
+            <p class="access">{{ userRole }}</p>
           </div>
         </div>
 
@@ -60,7 +60,7 @@
               当前未归还
             </div>
             <div class="rightCountNum" style="color: #67C23A;">
-              {{ countEquipmentApply }}
+              {{ countNowReturn }}
             </div>
             <div style="font-size: 18px;color: #909399;float: right;margin-top: 5px;">
               项
@@ -74,7 +74,7 @@
               当前归还超期
             </div>
             <div class="rightCountNum" style="color: #F56C6C;">
-              {{ countEquipmentApply }}
+              {{ countNowDelay }}
             </div>
             <div style="font-size: 18px;color: #909399;float: right;margin-top: 5px;">
               项
@@ -83,55 +83,46 @@
         </div>
 
 
-        <div style="width: 280px;margin-left: 20px;margin-top: 15px;">
+        <div style="width: 280px;margin-left: 16px;margin-top: 15px;">
 
           <el-card shadow="always" class="cardCount">
-            <span >今日使用器材：</span>
-            <span class="cardCountNum" style="line-height: 80px;">300</span>
-            <span style="margin-left: 30px;">次</span>
+            <span>累计延迟归还次数：</span>
+            <span style="color: #409EFF;font-size: 18px;">{{ countDelay }}</span>
+          </el-card>
+
+          <el-card shadow="always" class="cardCount">
+            <span>累计造成差异次数：</span>
+            <span style="color: #F56C6C;font-size: 18px;">{{ countDifference }}</span>
 
           </el-card>
 
           <el-card shadow="always" class="cardCount">
-            <span >今日使用器材：</span>
-            <span class="cardCountNum" style="line-height: 80px;">300</span>
-            <span style="margin-left: 30px;">次</span>
-
-          </el-card>
-
-          <el-card shadow="always" class="cardCount">
-            <span >今日使用器材：</span>
-            <span class="cardCountNum" style="line-height: 80px;">300</span>
-            <span style="margin-left: 30px;">次</span>
-
+            <span>累计提交申请次数：</span>
+            <span style="color: #67C23A;font-size: 18px;">{{ countApply }}</span>
           </el-card>
 
         </div>
-
-
 
       </div>
 
       <div style="display: flex;justify-content: center;align-items: center;">
 
-        <el-card shadow="always" style="margin-right: 15px;margin-top: 15px;" >
-          <span style="font-size: 16px;color: #606266;font-weight: bold;">近七日使用器材次数：</span>
+        <el-card shadow="always" style="margin-right: 15px;margin-top: 15px;">
+          <span style="font-size: 16px;color: #606266;font-weight: bold;">各类器材使用次数统计：</span>
           <div style="width: 350px;height: 290px;margin-right: -100px;margin-top: 20px;margin-bottom: -25px">
-            <v-chart id="nightingale" />
+            <v-chart id="nightingale"/>
           </div>
         </el-card>
 
-          <el-card shadow="always" style="width: 65%;height: 345px;margin-top: 15px;">
-            <span style="font-size: 16px;color: #606266;font-weight: bold;">近七日使用器材次数：</span>
-            <div style="height: 320px;margin-top: -10px;">
-              <v-chart id="bar"/>
-            </div>
+        <el-card shadow="always" style="width: 65%;height: 345px;margin-top: 15px;">
+          <span style="font-size: 16px;color: #606266;font-weight: bold;">近七日使用器材次数：</span>
+          <div style="height: 320px;margin-top: -10px;">
+            <v-chart id="bar"/>
+          </div>
 
-          </el-card>
+        </el-card>
 
       </div>
-
-
 
     </div>
   </div>
@@ -139,13 +130,23 @@
 
 <script>
 
+import moment from "moment";
+
 export default {
 
   name: "Index",
   data() {
     return {
 
-      countEquipmentApply: '300',
+      countEquipmentApply: 0,
+      countNowReturn: 0,
+      countNowDelay: 0,
+      countDelay: 0,
+      countDifference: 0,
+      countApply: 0,
+      xDataArr: [],
+      yDataArr: [],
+      dataTime: [],
 
       option: {},
 
@@ -154,15 +155,357 @@ export default {
         week: '',
       },
 
+      useList: [],
+
       userRole: '',
 
       userInfo: {},
 
+      BarOption: {
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '3%',
+          containLabel: true
+        },
+        xAxis: [
+          {
+            type: 'category',
+            data: this.xDataArr,
+            axisTick: {
+              alignWithLabel: true
+            }
+          }
+        ],
+        yAxis: [
+          {
+            type: 'value'
+          }
+        ],
+        series: [
+          {
+            name: '次数',
+            type: 'bar',
+            data: [],
+            barWidth: '50%',
+
+          }
+        ]
+      },
+
+      NightingaleOption: {
+
+        tooltip: {
+          trigger: 'item',
+          formatter: '{a} <br/>{b} : {c} ({d}%)'
+        },
+        legend: {
+          left: 'center',
+          top: 'bottom',
+          data: []
+        },
+        series: [
+          {
+            name: '使用次数',
+            type: 'pie',
+            radius: [20, 140],
+            center: ['25%', '50%'],
+            roseType: 'radius',
+            itemStyle: {
+              borderRadius: 5
+            },
+            label: {
+              show: false
+            },
+            data: []
+          },
+        ]
+      },
+
+      equipmentInfo: [{}],
+
     }
   },
   created() {
-    this.getUserInfo()
+    this.getUserInfo();
+    this.getUseInfo();
+    this.getCountDelay();
+    this.getCountDifference();
+    this.getCountApply();
+
   },
+
+  methods: {
+
+    getUseInfo() {
+      this.$axios.get("/tb/use/info").then(res => {
+        this.countEquipmentApply = 0;
+        this.countNowDelay = 0;
+        this.countNowReturn = 0;
+        let use = res.data.data.useList;
+        this.useList = res.data.data.useList;
+
+        this.countEquipmentApply = use.length;
+
+        for (let i = 0; i < use.length; i++) {
+          if (use[i].state == 0) {
+            this.countNowReturn++;
+
+            let returnDate = use[i].returnDate;
+
+            let yy = new Date(returnDate).getFullYear();
+
+            let mm = new Date(returnDate).getMonth() + 1 < 10 ?
+                '0' + (new Date(returnDate).getMonth() + 1) : (new Date(returnDate).getMonth() + 1);
+
+            let dd = new Date(returnDate).getDate() < 10 ?
+                '0' + new Date(returnDate).getDate() : new Date(returnDate).getDate();
+
+            let hh = new Date(returnDate).getHours() < 10 ?
+                '0' + new Date(returnDate).getHours() : new Date(returnDate).getHours();
+
+            let mf = new Date(returnDate).getMinutes() + 10;
+
+            if (mf >= 60) {
+              mf = '0' + (mf - 60);
+              hh = hh + 1;
+              if (hh >= 24) {
+                hh = '0' + (hh - 24);
+                dd = dd + 1;
+                let testYYMM = yy + '-' + mm
+                let thisMd = moment(testYYMM, "YYYY-MM").daysInMonth()
+
+                if (dd > thisMd) {
+                  dd = '0' + (dd - thisMd)
+                  mm = new Date(returnDate).getMonth() + 2 < 10 ?
+                      '0' + (new Date(returnDate).getMonth() + 2) : (new Date(returnDate).getMonth() + 2);
+                  ;
+                  if (mm > 12) {
+                    mm = '0' + (mm - 12);
+                    yy = new Date(returnDate).getFullYear() + 1;
+                  }
+                }
+              }
+            }
+
+            let dateValue = yy + '-' + mm + '-' + dd + ' ' + hh + ':' + mf;
+
+
+            if (this.compareDate(this.getCurrentTime(), dateValue)) {
+              this.countNowDelay++;
+            }
+          }
+
+        }
+        this.getXDataArr();
+        this.getYdataArr();
+        this.getEquipmentInfo();
+
+      })
+    },
+
+    getEquipmentInfo() {
+      this.$axios.get("/tb/equipment/info").then(res => {
+
+        let equipments = res.data.data.equipments;
+        this.equipmentInfo = equipments;
+        let legendData = [];
+        let seriesData = [];
+        let pieData = {};
+        let count;
+
+
+        for (let i = 0; i < equipments.length; i++) {
+          count = 0;
+          pieData = {};
+          for (let j = 0; j < this.useList.length; j++) {
+            if (this.useList[j].equipment == equipments[i].equipment) {
+              count ++;
+            }
+          }
+          if (count != 0) {
+            pieData.name = equipments[i].equipment;
+            pieData.value = count;
+            seriesData.push(pieData);
+          }
+        }
+
+        seriesData.sort(function (a, b) {
+          return b.value - a.value;
+        });
+
+        const echarts = require('echarts/lib/echarts');
+        require('echarts/lib/chart/gauge');
+
+        var chartNightingale = document.getElementById('nightingale');
+        var myNightingale = echarts.init(chartNightingale);
+
+
+
+        // if (seriesData.length > 8) {
+        //
+        //   this.NightingaleOption.series[0].data = seriesData.slice(0,8)
+        //
+        //   seriesData.slice(0,8)
+        //   console.log("----seriesData----")
+        //   console.log(seriesData.slice(0,8))
+        // } else {
+        //   this.NightingaleOption.series[0].data = seriesData;
+        // }
+
+        this.NightingaleOption.series[0].data = seriesData;
+
+        myNightingale.setOption(this.NightingaleOption)
+
+
+      })
+    },
+
+    getXDataArr() {
+
+      let nowData = this.getCurrentTime();
+      console.log("nowData")
+      console.log(nowData)
+      this.xDataArr = [];
+      this.dataTime = [];
+
+      for (let i = 0; i < 7; i++) {
+        var subtract = moment(nowData).subtract(i, 'd');
+
+        let yy = new Date(subtract).getFullYear();
+        let mm = new Date(subtract).getMonth() + 1 < 10 ? '0' + (new Date(subtract).getMonth() + 1) : new Date(subtract).getMonth() + 1;
+        let dd = new Date(subtract).getDate() < 10 ? '0' + new Date(subtract).getDate() : new Date(subtract).getDate();
+        let hh = 23;
+        let mf = 59;
+
+        let Data = mm + '-' + dd;
+        let DataTime = yy + '-' + mm + '-' + dd + ' ' + hh + ':' + mf;
+
+        console.log("Data")
+        console.log(Data)
+        this.xDataArr.unshift(Data);
+        this.dataTime.unshift(DataTime);
+
+        if (i == 6) {
+          let minDataTime = yy + '-' + mm + '-' + dd + ' ' + '00:00';
+          this.dataTime.unshift(minDataTime);
+        }
+
+      }
+
+      console.log("this.xDataArr")
+      console.log(this.xDataArr)
+
+      console.log("this.dataTime")
+      console.log(this.dataTime)
+
+      const echarts = require('echarts/lib/echarts');
+      require('echarts/lib/chart/gauge');
+
+      this.BarOption.xAxis[0].data = this.xDataArr;
+
+      var chartBar = document.getElementById('bar');
+      var myBar = echarts.init(chartBar);
+
+      myBar.setOption(this.BarOption);
+
+    },
+
+    getYdataArr() {
+
+      const echarts = require('echarts/lib/echarts');
+      require('echarts/lib/chart/gauge');
+
+      let count;
+      let useList = this.useList;
+      this.yDataArr = [];
+
+      for (let i = 0; i < this.dataTime.length - 1; i++) {
+        count = 0;
+        for (let j = 0; j < this.useList.length; j++) {
+
+          if (this.compareDate(this.useList[j].applyDate, this.dataTime[i])
+              && this.compareDate(this.dataTime[i + 1], this.useList[j].applyDate)) {
+            count++;
+          }
+        }
+        this.yDataArr.push(count)
+      }
+
+      this.BarOption.series[0].data = this.yDataArr;
+
+      var chartBar = document.getElementById('bar');
+      var myBar = echarts.init(chartBar);
+
+      myBar.setOption(this.BarOption);
+
+      console.log("this.yDataArr")
+      console.log(this.yDataArr)
+    },
+
+    getUserInfo() {
+      this.$axios.get("/tb/userInfo").then(res => {
+
+        this.userInfo = res.data.data;
+
+        if (this.userInfo.userRole == "normal") {
+          this.userRole = "管理员"
+        } else {
+          this.userRole = "超级管理员"
+        }
+
+        this.currentDate.date = this.$moment(this.getCurrentTime()).format('YYYY-MM-DD');
+
+        let weeks = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        let wk = new Date().getDay();
+        this.currentDate.week = weeks[wk];
+
+      })
+    },
+
+    getCurrentTime() {
+      let yy = new Date().getFullYear();
+      let mm = new Date().getMonth() + 1 < 10 ? '0' + (new Date().getMonth() + 1) : new Date().getMonth() + 1;
+      let dd = new Date().getDate() < 10 ? '0' + new Date().getDate() : new Date().getDate();
+      let hh = new Date().getHours() < 10 ? '0' + new Date().getHours() : new Date().getHours();
+      let mf = new Date().getMinutes() < 10 ? '0' + new Date().getMinutes() : new Date().getMinutes();
+
+      let dateValue = yy + '-' + mm + '-' + dd + ' ' + hh + ':' + mf;
+      return dateValue
+    },
+
+    compareDate(d1, d2) {
+      let date1 = new Date(Date.parse(d1))
+      let date2 = new Date(Date.parse(d2))
+      return date1 > date2
+    },
+
+    getCountApply() {
+      this.$axios.get("/tb/apply/countInfo").then(res => {
+        this.countApply = res.data.data.applyList.length;
+      })
+    },
+
+    getCountDelay() {
+      this.$axios.get("/tb/delay/countInfo").then(res => {
+        this.countDelay = res.data.data.delayList.length;
+      })
+    },
+
+    getCountDifference() {
+      this.$axios.get("/tb/difference/info").then(res => {
+        this.countDifference = res.data.data.differenceList.length;
+      })
+    },
+
+  },
+
   mounted() {
 
     const echarts = require('echarts/lib/echarts');
@@ -395,140 +738,23 @@ export default {
 
     option && myChart.setOption(option);
 
-    var chartNightingale = document.getElementById('nightingale');
-    var myNightingale = echarts.init(chartNightingale);
-    var NightingaleOption;
+    // var chartNightingale = document.getElementById('nightingale');
+    // var myNightingale = echarts.init(chartNightingale);
+    // var NightingaleOption = this.NightingaleOption;
+    //
+    // NightingaleOption && myNightingale.setOption(NightingaleOption);
 
-    NightingaleOption = {
 
-      tooltip: {
-        trigger: 'item',
-        formatter: '{a} <br/>{b} : {c} ({d}%)'
-      },
-      legend: {
-        left: 'center',
-        top: 'bottom',
-        data: [
-          'rose1',
-          'rose2',
-          'rose3',
-          'rose4',
-          'rose5',
-          'rose6',
-          'rose7',
-          'rose8'
-        ]
-      },
-      series: [
-        {
-          name: 'Radius Mode',
-          type: 'pie',
-          radius: [20, 140],
-          center: ['25%', '50%'],
-          roseType: 'radius',
-          itemStyle: {
-            borderRadius: 5
-          },
-          label: {
-            show: false
-          },
-          data: [
-            { value: 40, name: 'rose 1' },
-            { value: 33, name: 'rose 2' },
-            { value: 28, name: 'rose 3' },
-            { value: 22, name: 'rose 4' },
-            { value: 20, name: 'rose 5' },
-            { value: 15, name: 'rose 6' },
-            { value: 12, name: 'rose 7' },
-            { value: 10, name: 'rose 8' }
-          ]
-        },
-      ]
-    };
-
-    NightingaleOption && myNightingale.setOption(NightingaleOption);
-
-    var chartBar = document.getElementById('bar');
-    var myBar = echarts.init(chartBar);
-    var BarOption;
-
-    BarOption = {
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: {
-          type: 'shadow'
-        }
-      },
-      grid: {
-        left: '3%',
-        right: '4%',
-        bottom: '3%',
-        containLabel: true
-      },
-      xAxis: [
-        {
-          type: 'category',
-          data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-          axisTick: {
-            alignWithLabel: true
-          }
-        }
-      ],
-      yAxis: [
-        {
-          type: 'value'
-        }
-      ],
-      series: [
-        {
-          name: 'Direct',
-          type: 'bar',
-          barWidth: '50%',
-          data: [1, 5, 2, 3, 9, 3, 22]
-        }
-      ]
-    };
-
-    BarOption && myBar.setOption(BarOption);
+    // var chartBar = document.getElementById('bar');
+    // var myBar = echarts.init(chartBar);
+    // var BarOption = this.BarOption;
+    //
+    // BarOption && myBar.setOption(BarOption);
 
 
   },
 
-  methods: {
 
-    getUserInfo() {
-      this.$axios.get("/tb/userInfo").then(res => {
-
-        this.userInfo = res.data.data;
-
-        if (this.userInfo.userRole == "normal") {
-          this.userRole = "管理员"
-        } else {
-          this.userRole = "超级管理员"
-        }
-
-        this.currentDate.date = this.$moment(this.getCurrentTime()).format('YYYY-MM-DD');
-
-        let weeks = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-        let wk = new Date().getDay();
-        this.currentDate.week = weeks[wk];
-
-      })
-    },
-
-    getCurrentTime() {
-      let yy = new Date().getFullYear();
-      let mm = new Date().getMonth() + 1;
-      let dd = new Date().getDate();
-      let hh = new Date().getHours();
-      let mf = new Date().getMinutes() < 10 ? '0' + new Date().getMinutes() : new Date().getMinutes();
-
-      let dateValue = yy + '-' + mm + '-' + dd + ' ' + hh + ':' + mf;
-      return dateValue
-    },
-
-
-  }
 }
 </script>
 
@@ -557,19 +783,12 @@ export default {
   height: 60px;
   width: 295px;
   line-height: 5px;
-  font-size: 14px;
+  font-size: 16px;
   color: #606266;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 15px 0px;
-}
-
-.cardCountNum {
-  font-size: 30px;
-  margin-left: 20px;
-  color: coral;
-  font-weight: bold;
 }
 
 
@@ -583,7 +802,7 @@ export default {
 .rightCard {
   width: 165px;
   height: 215px;
-  margin: 15px 15px 0px ;
+  margin: 15px 15px 0px;
 }
 
 .left {

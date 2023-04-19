@@ -360,17 +360,7 @@ export default {
       currentPage: 1,
       pageSize: 6,
 
-      tableData: [{
-        applicationTime: '',
-        name: '',
-        className: '',
-        equipmentName: '',
-        quantity: '',
-        warehouse: '',
-        reason: '',
-        returnTime: '',
-        returnStatus: ''
-      },],
+      tableData: [],
 
       dialogTableVisible: false,
       dialogFormVisible: false,
@@ -706,14 +696,15 @@ export default {
           for (let i = 0; i < addUse.equipments.length; i++) {
             for (let j = 0; j < this.equipmentInfo.length; j++) {
               if (addUse.equipments[i].value == this.equipmentInfo[j].equipment) {
-                addUse.equipments[i].className = this.equipmentInfo[j].className
+                addUse.equipments[i].className = this.equipmentInfo[j].className;
+                addUse.equipments[i].equipment == this.equipmentInfo[j].equipment
                 break;
               }
             }
           }
 
           //将数据发送给后端进行处理
-          return this.$axios.post('/tb/use/addUse', this.addUseFromData)
+          return this.$axios.post('/tb/use/addUse', addUse)
               .then(res => {
 
                 //后端返回成功消息后向用户提示使用成功并更新页面数据，关闭对话框

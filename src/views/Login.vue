@@ -14,10 +14,15 @@
     <el-col :span="6">
       <el-form :model="loginForm" :rules="rules" ref="loginForm" label-width="80px">
         <el-form-item label="用户名" prop="username" style="width: 380px;">
-          <el-input v-model="loginForm.username"></el-input>
+          <el-input v-model="loginForm.username"
+                    :maxlength="18"
+                    clearable></el-input>
         </el-form-item>
         <el-form-item label="密码" prop="password"  style="width: 380px;">
-          <el-input v-model="loginForm.password" type="password"></el-input>
+          <el-input v-model="loginForm.password"
+                    :maxlength="18"
+                    clearable
+                    type="password"></el-input>
         </el-form-item>
         <el-form-item label="验证码" prop="code"  style="width: 380px;">
           <el-input v-model="loginForm.code"  style="width: 172px; float: left" maxlength="5"></el-input>
@@ -88,9 +93,6 @@ export default {
     },
     getCaptcha() {
       this.$axios.get('/captcha').then(res => {
-
-        console.log("/captcha")
-        console.log(res)
 
         this.loginForm.token = res.data.data.token
         this.captchaImg = res.data.data.captchaImg

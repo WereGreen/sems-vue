@@ -29,7 +29,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="所属仓库" prop="warehouse">
-          <el-select v-model="queryFromData.warehouse" clearable placeholder="请选择仓库">
+          <el-select v-model="queryFromData.warehouse" clearable filterable placeholder="请选择仓库">
             <el-option
                 v-for="item in warehouseOptions"
                 :key="item.value"
@@ -183,7 +183,7 @@
       <el-form label-position="right" label-width="80px" :model="approvalFromData">
 
         <div style="display: flex;">
-          <el-form-item label="使用人" :label-width="formLabelWidth">
+          <el-form-item label="申请人" :label-width="formLabelWidth">
             <el-input v-model="approvalFromData.name"
                       style="width: 180px"
                       :disabled="true"></el-input>
@@ -202,7 +202,7 @@
                       :disabled="true"></el-input>
           </el-form-item>
 
-          <el-form-item label="使用数量" :label-width="formLabelWidth">
+          <el-form-item label="申请数量" :label-width="formLabelWidth">
             <el-input v-model="approvalFromData.num"
                       style="width: 180px"
                       :disabled="true"></el-input>
@@ -376,19 +376,7 @@ export default {
       currentPage: 1,
       pageSize: 6,
 
-      tableData: [{
-        id: '',
-        applicationDate: '',
-        name: '',
-        equipment: '',
-        num: '',
-        warehouse: '',
-        reason: '',
-        applicationStatus: 0,
-        auditorReason: '',
-        auditor: '',
-        auditorDate: '',
-      }],
+      tableData: [],
 
       addScrapDialogVisible: false,
       handleDialogVisible: false,

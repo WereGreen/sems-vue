@@ -571,18 +571,7 @@ export default {
         {},
       ],
 
-      tableData: [{
-        useId: 0,
-        applicationTime: '',
-        name: '',
-        className: '',
-        equipmentName: '',
-        quantity: '',
-        warehouse: '',
-        reason: '',
-        returnTime: '',
-        returnStatus: ''
-      },],
+      tableData: [],
 
 
       name: '',

@@ -50,6 +50,7 @@
               <el-select
                   v-model="queryFromData.username"
                   clearable
+                  filterable
                   style="width: 205px"
                   placeholder="请选择操作人"
               >
@@ -241,6 +242,7 @@
               <el-select
                   v-model="warehouseQueryFromData.warehouse"
                   clearable
+                  filterable
                   style="width: 170px"
                   placeholder="请选择仓库">
                 <el-option
@@ -463,6 +465,7 @@
                 <el-select
                     v-model="stockQueryFromData.warehouse"
                     clearable
+                    filterable
                     style="width: 170px"
                     placeholder="请选择仓库">
                   <el-option
@@ -478,6 +481,7 @@
                 <el-select
                     v-model="stockQueryFromData.equipment"
                     clearable
+                    filterable
                     style="width: 170px"
                     placeholder="请选择器材">
                   <el-option-group
@@ -564,13 +568,127 @@
                        @click="addEquipment()"
                        style="align-items: center; margin-top: 25px;">新增库存
             </el-button>
+            <el-button type="primary"
+                       round
+                       @click="upkeepEquipment()"
+                       style="align-items: center; margin-top: 25px;">维修记录
+            </el-button>
           </div>
 
 
         </el-dialog>
 
-        <!--    修改库存    -->
+        <!--    维修库存    -->
+        <el-dialog title="维修记录"
+                   center
+                   width="60%"
+                   :visible.sync="upkeepDialogVisible">
 
+          <el-form :inline="true"
+                   :model="upkeepQueryFromData"
+                   class="demo-form-inline"
+                   style="margin-left: 85px;"
+                   size="medium"
+                   ref="classQueryFromData">
+
+            <el-form-item label="仓库名称" prop="warehouse">
+              <el-select
+                  v-model="upkeepQueryFromData.warehouse"
+                  clearable
+                  filterable
+                  style="width: 170px"
+                  placeholder="请选择仓库">
+                <el-option
+                    v-for="item in warehouseOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value">
+                </el-option>
+              </el-select>
+            </el-form-item>
+
+            <el-form-item label="维修状态" prop="state">
+              <el-select
+                  v-model="upkeepQueryFromData.state"
+                  clearable
+                  style="width: 170px"
+                  placeholder="请选择状态">
+                <el-option
+                    v-for="item in upkeepStateOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value">
+                </el-option>
+              </el-select>
+            </el-form-item>
+
+            <el-form-item style="margin-left: 20px;">
+              <el-button type="primary" @click="submitUpkeepQueryForm()">查询</el-button>
+            </el-form-item>
+            <el-form-item>
+              <el-button @click="resetUpkeepQueryForm()">重置</el-button>
+            </el-form-item>
+          </el-form>
+
+          <el-table
+              :cell-style="rowStyle"
+              height="450px"
+              style="width: 100%;"
+              stripe
+              :data="upkeepTableData">
+
+            <el-table-column
+                property="startDate"
+                align="center"
+                label="开始日期">
+            </el-table-column>
+            <el-table-column
+                property="warehouse"
+                align="center"
+                label="所属仓库">
+            </el-table-column>
+            <el-table-column
+                property="equipment"
+                align="center"
+                label="维修器材">
+            </el-table-column>
+            <el-table-column
+                property="num"
+                align="center"
+                label="维修数量">
+            </el-table-column>
+            <el-table-column
+                property="reason"
+                align="center"
+                :show-overflow-tooltip="true"
+                label="原因">
+            </el-table-column>
+            <el-table-column
+                property="operation"
+                align="center"
+                label="操作/结束日期">
+
+              <template slot-scope="scope">
+                <el-button
+                    size="mini"
+                    type="primary"
+                    v-if="scope.row.state == 0"
+                    round
+                    plain
+                    @click="accomplishUpkeep(scope.$index, scope.row)">完成
+                </el-button>
+
+                <span v-if="scope.row.state != 0">
+              {{ scope.row.endDate }}
+            </span>
+
+              </template>
+
+            </el-table-column>
+          </el-table>
+        </el-dialog>
+
+        <!--    修改库存    -->
         <el-dialog
             title="修改库存"
             :visible.sync="modifyStockDialogVisible"
@@ -591,6 +709,7 @@
                 <el-select
                     v-model="modifyStockFromData.warehouse"
                     clearable
+                    filterable
                     placeholder="请选择仓库">
                   <el-option
                       v-for="item in warehouseOptions"
@@ -652,6 +771,7 @@
               <el-select
                   v-model="addStockFromData.warehouse"
                   clearable
+                  filterable
                   placeholder="请选择仓库">
                 <el-option
                     v-for="item in warehouseOptions"
@@ -666,6 +786,7 @@
               <el-select
                   v-model="addStockFromData.equipment"
                   clearable
+                  filterable
                   placeholder="请选择器材">
                 <el-option-group
                     v-for="group in options"
@@ -715,6 +836,8 @@
 </template>
 
 <script>
+import moment from "moment";
+
 export default {
   name: "EquipmentWarehouse",
   data() {
@@ -732,6 +855,17 @@ export default {
           label: '',
           value: '',
         },
+      ],
+
+      upkeepStateOptions:[
+        {
+          label: '维修中',
+          value: 0,
+        },
+        {
+          label: '已完成',
+          value: 1,
+        }
       ],
 
       addStockFromData: {
@@ -829,12 +963,21 @@ export default {
         applyReason: '',
       },
 
+      upkeepQueryFromData: {
+        username: '',
+        equipment: '',
+        warehouse: '',
+        state: '',
+      },
+
       currentPage: 1,
       pageSize: 6,
 
       tableData: [],
 
       WarehouseTableData: [],
+
+      upkeepTableData: [],
 
       stockTableData: [],
 
@@ -844,6 +987,7 @@ export default {
       modifyStockDialogVisible: false,
       addWarehouseDialogVisible: false,
       addStockDialogVisible: false,
+      upkeepDialogVisible: false,
       deleteWarehouseDialogVisible: false,
       formLabelWidth: '120px',
 
@@ -1096,10 +1240,6 @@ export default {
       this.$axios.get("/tb/userInfo").then(res => {
         this.name = res.data.data.name;
         this.username = res.data.data.username;
-        console.log("username:" + this.username)
-        this.queryFromData.name = res.data.data.username;
-        console.log(res.data.data)
-
       })
     },
 
@@ -1110,6 +1250,71 @@ export default {
 
     addEquipment() {
       this.addStockDialogVisible = true;
+    },
+
+    upkeepEquipment() {
+      this.upkeepDialogVisible = true;
+      this.getUpkeepInfo();
+    },
+
+    accomplishUpkeep(index, row) {
+      this.$confirm('此操作将结束维修并将该器材归还至对应的仓库, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+
+        row.endDate = this.getCurrentTime();
+
+        this.$axios.post("/tb/upkeep/accomplish", row).then(res => {
+
+          this.getUpkeepInfo();
+          this.getStockInfo();
+
+          this.$message({
+            type: 'success',
+            message: '完成维修成功！'
+          });
+
+        })
+
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消'
+        });
+      });
+
+    },
+
+    getUpkeepInfo() {
+      this.$axios.get("/tb/upkeep/info", {
+        // 传递的参数
+        params: {
+          username: this.username,
+        }
+        // 回调函数,一定要使用箭头函数,不然this的指向不是vue示例
+      }).then(res => {
+
+        let upkeepList = res.data.data.upkeepList;
+
+        this.upkeepTableData = [];
+        for (let i = 0; i < upkeepList.length; i++) {
+          this.$set(this.upkeepTableData, i, {
+            warehouse: upkeepList[i].warehouse,
+            equipment: upkeepList[i].equipment,
+            num: upkeepList[i].num,
+            state: upkeepList[i].state,
+            reason: upkeepList[i].reason,
+            startDate: upkeepList[i].startDate,
+            endDate: upkeepList[i].endDate,
+            id: upkeepList[i].id,
+            username: upkeepList[i].username,
+          })
+        }
+
+      })
+
     },
 
     submitAddWarehouseFromData() {
@@ -1543,6 +1748,37 @@ export default {
       })
     },
 
+    submitUpkeepQueryForm() {
+      this.$axios.get("/tb/upkeep/search", {
+        // 传递的参数
+        params: {
+          warehouse: this.upkeepQueryFromData.warehouse,
+          username: this.username,
+          state: this.upkeepQueryFromData.state,
+        }
+        // 回调函数,一定要使用箭头函数,不然this的指向不是vue示例
+      }).then(res => {
+
+        let upkeepList = res.data.data.upkeepList;
+
+        this.upkeepTableData = [];
+        for (let i = 0; i < upkeepList.length; i++) {
+          this.$set(this.upkeepTableData, i, {
+            warehouse: upkeepList[i].warehouse,
+            equipment: upkeepList[i].equipment,
+            num: upkeepList[i].num,
+            state: upkeepList[i].state,
+            reason: upkeepList[i].reason,
+            startDate: upkeepList[i].startDate,
+            endDate: upkeepList[i].endDate,
+            id: upkeepList[i].id,
+            username: upkeepList[i].username,
+          })
+        }
+
+      })
+    },
+
     submitQueryForm(formName) {
       this.$refs[formName].validate((valid) => {
         if (valid) {
@@ -1641,7 +1877,12 @@ export default {
     resetWarehouseQueryForm() {
       this.warehouseQueryFromData.warehouse = '';
       this.getWarehouseInfo();
+    },
 
+    resetUpkeepQueryForm() {
+      this.upkeepQueryFromData.warehouse = '';
+      this.upkeepQueryFromData.state = '';
+      this.getUpkeepInfo();
     },
 
     submitStockQueryForm() {

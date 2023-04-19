@@ -50,6 +50,7 @@
               <el-select
                   v-model="queryFromData.username"
                   clearable
+                  filterable
                   style="width: 205px"
                   placeholder="请选择操作人"
               >
@@ -657,6 +658,7 @@
               <el-select
                   v-model="addEquipmentFromData.className"
                   clearable
+                  filterable
                   placeholder="请选择分类">
                 <el-option
                     v-for="item in classNameOptions"
@@ -699,6 +701,7 @@
                                :key="equipment.key"
                                style="width: 150px"
                                clearable
+                               filterable
                                placeholder="请选择器材">
                       <el-option-group
                           v-for="group in options"
@@ -876,9 +879,6 @@ export default {
       tableData: [],
 
       classTableData: [
-        {
-          className: '',
-        }
       ],
 
       equipmentTableData: [],
@@ -1427,8 +1427,6 @@ export default {
       } else {
         this.modifyClassDialogVisible = false;
       }
-
-
     },
 
     operateName(row, column) {
@@ -1703,8 +1701,7 @@ export default {
           message: '已取消删除'
         });
       });
-    }
-    ,
+    },
 
     deleteEquipment(deleteEquipment) {
 

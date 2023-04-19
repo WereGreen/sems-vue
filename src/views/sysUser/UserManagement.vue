@@ -9,31 +9,38 @@
       <div class="searchForm">
 
         <el-form :inline="true"
-                 :model="formInline"
+                 :model="queryFromData"
                  class="demo-form-inline">
 
           <el-form-item label="姓名">
-            <el-input v-model="formInline.user"
+            <el-input v-model="queryFromData.name"
                       style="width: 220px;"
+                      maxlength="10"
+                      show-word-limit
+                      clearable
                       placeholder="请输入姓名"></el-input>
           </el-form-item>
 
           <el-form-item label="用户名">
-            <el-input v-model="formInline.user"
+            <el-input v-model="queryFromData.username"
                       style="width: 220px;"
+                      maxlength="10"
+                      show-word-limit
+                      @input="queryUsernameInput"
+                      clearable
                       placeholder="请输入用户名"></el-input>
           </el-form-item>
 
           <el-form-item label="用户角色">
-            <el-select v-model="formInline.region" placeholder="请选择用户角色">
-              <el-option label="管理员" value="0"></el-option>
-              <el-option label="超级管理员" value="1"></el-option>
+            <el-select v-model="queryFromData.role" placeholder="请选择用户角色">
+              <el-option label="管理员" value="normal"></el-option>
+              <el-option label="超级管理员" value="admin"></el-option>
             </el-select>
           </el-form-item>
 
           <el-form-item style="margin-left: 40px;">
-            <el-button type="primary" @click="">查询</el-button>
-            <el-button @click="resetForm('')">重置</el-button>
+            <el-button type="primary" @click="submitQueryForm()">查询</el-button>
+            <el-button @click="resetForm()">重置</el-button>
           </el-form-item>
 
         </el-form>
@@ -43,7 +50,7 @@
       </div>
 
 
-      <div style="box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);padding-bottom: 15px;">
+      <div style="box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);padding-bottom: 15px;height: 420px;">
 
         <!--  表格  -->
         <div>
@@ -66,6 +73,7 @@
             <el-table-column
                 prop="role"
                 align="center"
+                :formatter="userRoleStatus"
                 label="用户角色">
             </el-table-column>
 
@@ -76,9 +84,12 @@
 
               <template slot-scope="scope">
               <el-button type="primary" size="mini" plain
+                         :disabled="scope.row.username == username"
                          @click="editUser(scope.$index, scope.row)" >编辑</el-button>
 
-              <el-button type="danger" size="mini" plain>删除</el-button>
+              <el-button type="danger" size="mini" plain
+                         :disabled="scope.row.username == username"
+                          @click="deleteUser(scope.$index, scope.row,tableData)">删除</el-button>
               </template>
 
             </el-table-column>
@@ -117,7 +128,7 @@
             </div>
             <div style="color: #409EFF;font-size: 80px;
             text-align: center;line-height: 120px;width: 165px;margin-left: -20px">
-              {{countWarehouse}}
+              {{countUser}}
             </div>
             <div style="font-size: 18px;color: #909399;float: right">
               人
@@ -133,7 +144,7 @@
             </div>
             <div style="color: coral;font-size: 80px;
             text-align: center;line-height: 120px;width: 165px;margin-left: -20px">
-              {{countEquipments}}
+              {{countAdmin}}
             </div>
             <div style="font-size: 18px;color: #909399;float: right">
               人
@@ -154,7 +165,7 @@
             </div>
             <div style="color: #67C23A;font-size: 80px;
             text-align: center;line-height: 120px;width: 165px;margin-left: -20px">
-              {{countEquipments}}
+              {{countNormal}}
             </div>
             <div style="font-size: 18px;color: #909399;float: right">
               人
@@ -187,6 +198,7 @@
         title="新增用户"
         center
         width="30%"
+        @close="addUserDialogclose()"
         :visible.sync="dialogFormVisible">
 
 
@@ -194,52 +206,22 @@
         <el-form :model="formInline" label-position="right" label-width="80px">
 
           <el-form-item label="姓名">
-            <el-input v-model="formInline.user" style="width: 220px;" placeholder="请输入姓名"></el-input>
+            <el-input v-model="formInline.name" style="width: 220px;" placeholder="请输入姓名"></el-input>
           </el-form-item>
 
 
           <el-form-item label="用户名">
-            <el-input v-model="formInline.user" style="width: 220px;" placeholder="请输入用户名"></el-input>
+            <el-input v-model="formInline.username"
+                      @input="formUsernameInput"
+                      style="width: 220px;" placeholder="请输入用户名"></el-input>
           </el-form-item>
 
-          <el-form-item label="密码" prop="pass">
-            <el-input type="password"
-                      style="width: 220px;"
-                      v-model="formInline.pass"
-                      placeholder="请输入密码"
-                      autocomplete="off"></el-input>
-          </el-form-item>
-
-          <el-form-item label="确认密码" prop="checkPass">
-            <el-input type="password"
-                      style="width: 220px;"
-                      v-model="formInline.checkPass"
-                      placeholder="请再次输入密码"
-                      autocomplete="off"></el-input>
-          </el-form-item>
 
           <el-form-item label="用户角色">
-            <el-select v-model="formInline.region" placeholder="请选择用户角色">
-              <el-option label="管理员" value="0"></el-option>
-              <el-option label="超级管理员" value="1"></el-option>
+            <el-select v-model="formInline.role" placeholder="请选择用户角色">
+              <el-option label="管理员" value="normal"></el-option>
+              <el-option label="超级管理员" value="admin"></el-option>
             </el-select>
-          </el-form-item>
-
-          <el-form-item label="系统权限" v-if="formInline.region != 1">
-            <el-checkbox-group v-model="checkboxGroup" size="small">
-              <el-checkbox-button v-for="jurisdiction in jurisdictions" :label="jurisdiction" :disabled="jurisdiction === '北京'" :key="jurisdiction">{{jurisdiction}}</el-checkbox-button>
-            </el-checkbox-group>
-
-            <el-checkbox-group
-                v-model="checkedjurisdictions"
-                @change="handleCheckedjurisdictionsChange">
-              <el-checkbox
-                  v-for="jurisdiction in jurisdictions"
-                  :label="jurisdiction"
-                  :disabled="jurisdiction === '器材使用' || jurisdiction === '器材归还'"
-                  :key="jurisdiction">{{jurisdiction}}</el-checkbox>
-            </el-checkbox-group>
-
           </el-form-item>
 
         </el-form>
@@ -247,7 +229,7 @@
 
       <div slot="footer" style="margin-top: -35px;">
         <el-button @click="dialogFormVisible = false">取 消</el-button>
-        <el-button type="primary" @click="dialogFormVisible = false">确 定</el-button>
+        <el-button type="primary" @click="addNewUser()">确 定</el-button>
       </div>
 
     </el-dialog>
@@ -269,34 +251,20 @@
 
 
           <el-form-item label="用户名">
-            <el-input v-model="editUserFormDate.username" style="width: 220px;" placeholder="请输入用户名"></el-input>
+            <el-input v-model="editUserFormDate.username"
+                      @input="editUsernameInput"
+                      style="width: 220px;" placeholder="请输入用户名"></el-input>
           </el-form-item>
 
-          <el-form-item label="用户角色">
+          <el-form-item label="用户角色" :formatter="userRoleStatus">
             <el-select v-model="editUserFormDate.role" placeholder="请选择用户角色">
-              <el-option label="管理员" value="0"></el-option>
-              <el-option label="超级管理员" value="1"></el-option>
+              <el-option label="管理员" value="normal"></el-option>
+              <el-option label="超级管理员" value="admin"></el-option>
             </el-select>
           </el-form-item>
 
-          <el-form-item label="系统权限" v-if="editUserFormDate.role != 1">
-            <el-checkbox-group v-model="checkboxGroup" size="small">
-              <el-checkbox-button v-for="jurisdiction in jurisdictions" :label="jurisdiction" :disabled="jurisdiction === '北京'" :key="jurisdiction">{{jurisdiction}}</el-checkbox-button>
-            </el-checkbox-group>
-
-            <el-checkbox-group
-                v-model="checkedjurisdictions"
-                @change="handleCheckedjurisdictionsChange">
-              <el-checkbox
-                  v-for="jurisdiction in jurisdictions"
-                  :label="jurisdiction"
-                  :disabled="jurisdiction === '器材使用' || jurisdiction === '器材归还'"
-                  :key="jurisdiction">{{jurisdiction}}</el-checkbox>
-            </el-checkbox-group>
-          </el-form-item>
-
           <el-form-item label="重置密码">
-            <el-button type="primary" plain size="small"  >点击重置用户密码</el-button>
+            <el-button type="primary" plain size="small" @click="resettingPassword" >点击重置用户密码</el-button>
           </el-form-item>
 
         </el-form>
@@ -304,7 +272,7 @@
 
       <div slot="footer" style="margin-top: -35px;">
         <el-button @click="editdialogFormVisible = false">取 消</el-button>
-        <el-button type="primary" @click="editdialogFormVisible = false">确 定</el-button>
+        <el-button type="primary" @click="updateUserInfo()">确 定</el-button>
       </div>
 
     </el-dialog>
@@ -315,7 +283,6 @@
 
 <script>
 
-const jurisdictionOptions = ['器材使用', '器材归还', '申请添加', '申请报修', '申请报废'];
 
 export default {
   name: "UserManagement",
@@ -344,18 +311,29 @@ export default {
 
     return {
 
+      countUser: 0,
+      countNormal: 0,
+      countAdmin: 0,
+
       editUserFormDate: {
         name: '',
         username: '',
-        jurisdiction: [],
+        role: '',
+        oldName: '',
+        oldUsername: '',
+        oldRole: '',
+      },
+
+      queryFromData: {
+        username: '',
+        name: '',
         role: '',
       },
 
       formInline: {
-        user: '',
-        region: '',
-        pass: '',
-        checkPass: '',
+        name: '',
+        username: '',
+        role: '',
       },
 
       form: {
@@ -380,11 +358,6 @@ export default {
         jurisdiction: [],
       },
 
-      checkAll: false,
-      checkedjurisdictions: ['器材使用', '器材归还'],
-      jurisdictions: jurisdictionOptions,
-      isIndeterminate: true,
-
       rules: {
         pass: [
           { validator: validatePass, trigger: 'blur' }
@@ -394,95 +367,211 @@ export default {
         ],
       },
 
-      countWarehouse: 3,
-      countEquipments: 330,
-
-
 
       currentPage: 1,
       pageSize: 5,
 
-      tableData: [{
-        name: '王小虎',
-        username: 'wxh',
-        role: '管理员',
-        jurisdiction: [],
-
-      },
-        {
-        name: '王小虎',
-        username: 'wxh',
-        role: '管理员',
-        userState: '正常',
-
-      },{
-        name: '王小虎',
-        username: 'wxh',
-        role: '管理员',
-        userState: '正常',
-
-      },
-        {
-        name: '王小虎',
-        username: 'wxh',
-        role: '管理员',
-        userState: '正常',
-
-      }, {
-          name: '王小虎',
-          username: 'wxh',
-          role: '管理员',
-          userState: '正常',
-        }, {
-          name: '王小虎',
-          username: 'wxh',
-          role: '管理员',
-          userState: '正常',
-        }, {
-          name: '王小虎',
-          username: 'wxh',
-          role: '管理员',
-          userState: '正常',
-        }],
+      tableData: [],
 
       formLabelWidth: '120px',
 
-
+      username: '',
+      name: '',
       userInfo: {}
 
     }
   },
   created() {
-    this.getUserInfo()
+    this.getUserInfo();
+    this.getAllUser();
   },
 
   methods: {
 
     editUser(index, row) {
       this.editdialogFormVisible = true;
-
       let eu = this.editUserFormDate;
-
       eu.name = row.name;
       eu.username = row.username;
       eu.role = row.role;
-      eu.userState = row.userState;
-      eu.jurisdiction = row.jurisdiction;
+      eu.oldName = row.name;
+      eu.oldUsername = row.username;
+      eu.oldRole = row.role;
 
     },
 
-    onSubmit() {
-      console.log('submit!');
+    addUserDialogclose() {
+      this.formInline = {};
     },
 
-    handleCheckAllChange(val) {
-      this.checkedjurisdictions = val ? jurisdictionOptions : ['器材使用', '器材归还'];
-      this.isIndeterminate = false;
+
+    repeatUsername(username) {
+      for (let i = 0; i < this.tableData.length; i++) {
+        if (username == this.tableData[i].username) {
+          this.$message({
+            type: 'warning',
+            message: '用户名重复！请重新输入'
+          });
+          return true;
+        }
+      }
+      return false;
     },
-    handleCheckedjurisdictionsChange(value) {
-      let checkedCount = value.length;
-      this.checkAll = checkedCount === this.jurisdictions.length;
-      this.isIndeterminate = checkedCount > 0 && checkedCount < this.jurisdictions.length;
+
+    addNewUser() {
+
+      if (this.repeatUsername(this.formInline.username)) {
+        this.$message({
+          type: 'warning',
+          message: '用户名重复！请重新输入'
+        });
+        return;
+      }
+
+
+      this.formInline.operationDate = this.getCurrentTime();
+      this.formInline.operationType = 1;
+      this.formInline.operationUsername = this.username;
+      this.formInline.operationClass = 2;
+      this.formInline.details = '添加系统新用户，用户名为：' + this.formInline.username;
+
+      this.$axios.post("/tb/user/add", this.formInline).then(res => {
+
+        this.getAllUser();
+
+        this.$message({
+          type: 'success',
+          message: '新增用户成功!'
+        });
+
+      })
+
+      this.dialogFormVisible = false;
+      this.formInline = {};
+
+    },
+
+    resettingPassword() {
+
+      let edi = this.editUserFormDate;
+
+      this.$confirm('此操作将重置用户名为： ' + edi.oldUsername + ' 的用户密码, 该操作不可撤回，是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+
+        edi.operationDate = this.getCurrentTime();
+        edi.operationType = 0;
+        edi.operationUsername = this.username;
+        edi.operationClass = 2;
+        edi.details = '重置用户名为：' + edi.oldUsername + ' 的密码';
+
+        this.$axios.post("/tb/user/resettingPassword", edi).then(res => {
+
+          this.$message({
+            type: 'success',
+            message: '重置用户密码成功!'
+          });
+
+          this.editdialogFormVisible = false;
+        })
+
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        });
+      });
+
+    },
+
+    updateUserInfo() {
+
+      let edi = this.editUserFormDate;
+
+
+      if (edi.name == edi.oldName && edi.role == edi.oldRole && edi.username == edi.oldUsername) {
+        this.editdialogFormVisible = false;
+        return;
+      }
+
+      if (this.repeatUsername(edi.username)) {
+        this.$message({
+          type: 'warning',
+          message: '用户名重复！请重新输入'
+        });
+        return;
+      }
+
+      edi.operationDate = this.getCurrentTime();
+      edi.operationType = 0;
+      edi.operationUsername = this.username;
+      edi.operationClass = 2;
+      edi.details = '';
+
+      if (edi.name != edi.oldName) {
+        edi.details += ' 将用户名字由： ' + edi.oldName + ' 改为：' + edi.name;
+      }
+      if (edi.role != edi.oldRole) {
+        if (edi.role == 'normal') {
+          edi.details += ' 将用户角色由超级管理员修改为管理员 ';
+        } else {
+          edi.details += ' 将用户角色由管理员修改为超级管理员 ';
+        }
+      }
+      if (edi.username != edi.oldUsername) {
+        edi.details += ' 将该用户的用户名由： ' + edi.oldUsername + ' 改为：' + edi.username;
+      }
+
+      this.$axios.post("/tb/user/update", edi).then(res => {
+
+        this.getAllUser();
+        this.$message({
+          type: 'success',
+          message: '修改用户信息成功!'
+        });
+
+        this.editdialogFormVisible = false;
+      })
+
+    },
+
+    deleteUser(index, row) {
+      this.$confirm('此操作将删除用户名为： ' + row.username + ' 的用户, 该操作不可撤回，是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+
+        this.$axios.delete("/tb/user/delete", {
+          // 传递的参数
+          data: {
+            username: row.username,
+            operationDate: this.getCurrentTime(),
+            operationType: -1,
+            operationClass: 2,
+            operationUsername: this.username,
+            details: "删除了系统中用户名为：" + row.username + ' 的用户信息 ',
+          }
+        }).then(res => {
+
+          this.getAllUser();
+
+          this.$message({
+            type: 'success',
+            message: '删除成功!'
+          });
+
+        })
+
+
+      }).catch(() => {
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        });
+      });
     },
 
     submitAddForm(formName) {
@@ -515,6 +604,81 @@ export default {
       });
     },
 
+    queryUsernameInput(val){
+      let codeReg = new RegExp("[A-Za-z0-9]+"), //正则 英文+数字；
+          len=val.length,
+          str='';
+      for(var i=0;i<len;i++){
+        if(codeReg.test(val[i])){
+          str+=val[i];
+        }
+      }
+      this.queryFromData.username=str;
+    },
+
+    formUsernameInput(val){
+      let codeReg = new RegExp("[A-Za-z0-9]+"), //正则 英文+数字；
+          len=val.length,
+          str='';
+      for(var i=0;i<len;i++){
+        if(codeReg.test(val[i])){
+          str+=val[i];
+        }
+      }
+      this.formInline.username=str;
+    },
+
+    editUsernameInput(val){
+      let codeReg = new RegExp("[A-Za-z0-9]+"), //正则 英文+数字；
+          len=val.length,
+          str='';
+      for(var i=0;i<len;i++){
+        if(codeReg.test(val[i])){
+          str+=val[i];
+        }
+      }
+      this.editUserFormDate.username=str;
+    },
+
+
+    submitQueryForm() {
+      this.$axios.get("/tb/user/search", {
+        // 传递的参数
+        params: {
+          name: this.queryFromData.name,
+          username: this.queryFromData.username,
+          role: this.queryFromData.role,
+        }
+        // 回调函数,一定要使用箭头函数,不然this的指向不是vue示例
+      }).then(res => {
+
+        let userList = res.data.data.userList;
+
+        this.tableData = [];
+        for (let i = 0; i < userList.length; i++) {
+          this.$set(this.tableData, i, {
+            username: userList[i].username,
+            name: userList[i].name,
+            role: userList[i].role,
+          })
+        }
+      })
+    },
+
+    resetForm() {
+      this.queryFromData = {};
+      this.getAllUser();
+    },
+
+    userRoleStatus(row) {
+      if (row.role == 'normal') {
+        return '管理员'
+      } else {
+        return '超级管理员'
+      }
+
+    },
+
     operationStatus(row, column) {
       if (row.operationStatus === 0) {
         return '修改'
@@ -526,15 +690,44 @@ export default {
     },
 
     getUserInfo() {
-      this.$axios.get("/sysUser/UserInfo").then(res => {
-
-        this.userInfo = res.data.data;
+      this.$axios.get("/tb/userInfo").then(res => {
+        this.name = res.data.data.name;
+        this.username = res.data.data.username;
       })
     },
 
-    deleteClassMessageBox(index, row) {
+    getAllUser() {
+
+      this.$axios.get("/tb/user/allUser").then(res => {
+
+        let allUserList = res.data.data.allUserList;
+
+        this.tableData = [];
+        this.countNormal = 0;
+        this.countUser = 0;
+        this.countAdmin = 0;
+        for (let i = 0; i < allUserList.length; i++) {
+          this.$set(this.tableData, i, {
+            username: allUserList[i].username,
+            name: allUserList[i].name,
+            role: allUserList[i].role,
+          })
+          this.countUser += 1;
+
+          if (allUserList[i].role == 'normal') {
+            this.countNormal += 1;
+          } else {
+            this.countAdmin += 1;
+          }
+
+        }
+
+      })
+    },
+
+    deleteUserMessageBox(index, row) {
       this.$confirm('此操作将删除名称为：“' + row.warehouseName +
-          '” 的仓库 , 该操作不可撤回，是否继续?', '提示', {
+          '” 的用户 , 该操作不可撤回，是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
@@ -553,9 +746,9 @@ export default {
 
     getCurrentTime() {
       let yy = new Date().getFullYear();
-      let mm = new Date().getMonth() + 1;
-      let dd = new Date().getDate();
-      let hh = new Date().getHours();
+      let mm = new Date().getMonth() + 1 < 10 ? '0' + (new Date().getMonth() + 1) : new Date().getMonth() + 1;
+      let dd = new Date().getDate() < 10 ? '0' + new Date().getDate() : new Date().getDate();
+      let hh = new Date().getHours() < 10 ? '0' + new Date().getHours() : new Date().getHours();
       let mf = new Date().getMinutes() < 10 ? '0' + new Date().getMinutes() : new Date().getMinutes();
 
       let dateValue = yy + '-' + mm + '-' + dd + ' ' + hh + ':' + mf;

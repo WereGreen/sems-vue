@@ -48,6 +48,7 @@
         <el-form-item label="所属仓库" prop="warehouse">
           <el-select v-model="queryFromData.warehouse"
                      style="width: 180px;"
+                     filterable
                      clearable placeholder="请选择仓库">
             <el-option
                 v-for="item in warehouseOptions"
@@ -102,6 +103,7 @@
         <el-form-item label="审核人员" prop="auditorName">
           <el-select v-model="queryFromData.auditorName"
                      style="width: 180px;"
+                     filterable
                      clearable placeholder="请选择审核人员">
             <el-option
                 v-for="item in adminOptions"
@@ -139,7 +141,7 @@
 
 
           <el-form-item label="器材名称" prop="equipment">
-            <el-select v-model="applyFromData.equipment" clearable placeholder="请选择器材">
+            <el-select v-model="applyFromData.equipment" clearable filterable placeholder="请选择器材">
               <el-option-group
                   v-for="group in options"
                   :key="group.label"
@@ -168,7 +170,7 @@
           </el-form-item>
 
           <el-form-item label="存放仓库" prop="warehouse">
-            <el-select v-model="applyFromData.warehouse" clearable placeholder="请选择仓库">
+            <el-select v-model="applyFromData.warehouse" clearable filterable placeholder="请选择仓库">
               <el-option
                   v-for="item in warehouseOptions"
                   :key="item.value"
@@ -262,6 +264,7 @@
         <el-table-column
             prop="explain"
             align="center"
+            :formatter="auditorexplain"
             :show-overflow-tooltip="true"
             label="审核说明">
         </el-table-column>
@@ -414,20 +417,7 @@ export default {
         {},
       ],
 
-      tableData: [{
-        id: '',
-        applicationDate: '',
-        name: '',
-        clasName: '',
-        equipment: '',
-        num: '',
-        warehouse: '',
-        reason: '',
-        state: 0,
-        explain: '',
-        auditorName: '',
-        auditorDate: '',
-      },
+      tableData: [
       ],
 
       addApplyDialogVisible: false,
@@ -617,6 +607,8 @@ export default {
     carTimeFilter: function (row, column, cellValue) {
       if (cellValue != null) {
         return moment(cellValue).format("YYYY-MM-DD HH:mm");
+      } else {
+        return '审核中'
       }
     },
 
@@ -689,14 +681,24 @@ export default {
       }
     },
 
+    auditorexplain(row, column) {
+      if (row.explain == null) {
+        return '审核中'
+      } else {
+        return row.explain
+      }
+    },
+
     auditorName(row, column) {
+      if (row.auditorName == null) {
+        return '审核中'
+      }
       for (let i = 0; i < this.adminOptions.length; i++) {
         if (row.auditorName == this.adminOptions[i].value) {
           return this.adminOptions[i].label;
           break;
         }
       }
-
     },
 
 

@@ -6,8 +6,10 @@
 
     <el-container>
       <el-header>
-        <strong>校园体育器材管理系统</strong>
-
+<!--        <strong class="strong">校园体育器材管理系统</strong>-->
+        <div style="height: 30px;">
+          <v-chart style="margin-top: 15px;" id="banner"/>
+        </div>
         <div class="header-avatar">
           <el-avatar size="medium" :src="avatar"></el-avatar>
           <el-dropdown>
@@ -16,9 +18,6 @@
             <i class="el-icon-arrow-down el-icon--right"></i>
           </span>
             <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item>
-                个人中心
-              </el-dropdown-item>
               <el-dropdown-item  @click.native="selectMenu({name: 'UserChangePassword', title: '修改密码'})">
                   修改密码
               </el-dropdown-item>
@@ -41,6 +40,7 @@
 <script>
 import SideMenu from "@/views/inc/SideMenu";
 import Tabs from "@/views/inc/Tabs";
+
 
 export default {
   name: "Home",
@@ -76,6 +76,8 @@ export default {
         localStorage.clear()
         sessionStorage. clear()
         this.$store.commit ("resetState")
+        var storage = window.localStorage;
+        storage.clear();
         this.$router.push("/login")
       })
     },
@@ -83,11 +85,81 @@ export default {
       this.$router.push('/sysUser/UserChangePassword');
       this.$store.commit("addTab", item)
     }
-  }
+  },
+  mounted() {
+    const echarts = require('echarts/lib/echarts');
+    require('echarts/lib/chart/gauge');
+
+    var chartDom = document.getElementById('banner');
+    var myChart = echarts.init(chartDom);
+
+    var option;
+
+    option = {
+      graphic: {
+        elements: [
+          {
+            type: 'text',
+            left: 'center',
+            top: 'center',
+            style: {
+              text: 'Campus Sports Equipment Management System',
+              fontSize: 28,
+              fontWeight: 'bold',
+              lineDash: [0, 200],
+              lineDashOffset: 0,
+              fill: 'transparent',
+              stroke: '#409EFF',
+              lineWidth: 1
+            },
+            keyframeAnimation: {
+              duration: 4000,
+              loop: true,
+              keyframes: [
+                {
+                  percent: 0.7,
+                  style: {
+                    fill: 'transparent',
+                    lineDashOffset: 200,
+                    lineDash: [200, 0]
+                  }
+                },
+                {
+                  // Stop for a while.
+                  percent: 1.1,
+                  style: {
+                    fill: 'transparent'
+                  }
+                },
+                {
+                  percent: 1,
+                  style: {
+                    fill: '#409EFF'
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    };
+
+    option && myChart.setOption(option);
+
+
+  },
 }
 </script>
 
 <style scoped>
+@import url(../assets/fonts/fons.css);
+
+
+/*.strong {*/
+/*  font-family: ljdxk;*/
+/*  font-size: 24px;*/
+/*  */
+/*}*/
 
 .example-showcase {
   cursor: pointer;
@@ -105,6 +177,7 @@ export default {
   width: 150px;
   height: 100%;
   padding-right: 30px;
+  margin-top: -45px;
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -117,7 +190,7 @@ export default {
 }
 
 .el-header {
-  background-color: #B3C0D1;
+  background-color: #d9ecff;
   color: #333;
   text-align: center;
   line-height: 60px;
